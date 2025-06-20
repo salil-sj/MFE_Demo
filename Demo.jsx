@@ -1,93 +1,64 @@
-const ToggleWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 20px;
-`;
-
-const ToggleButton = styled.button<{ isOn: boolean }>`
-  background-color: ${({ isOn }) => (isOn ? "#4caf50" : "#ccc")};
-  border: none;
-  border-radius: 20px;
-  width: 60px;
-  height: 30px;
-  position: relative;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-`;
-
-const ToggleKnob = styled.div<{ isOn: boolean }>`
-  background-color: white;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  position: absolute;
-  top: 3px;
-  left: ${({ isOn }) => (isOn ? "33px" : "3px")};
-  transition: left 0.3s ease;
-`;
-
-const Toggle = () => {
-  const [isOn, setIsOn] = useState(false);
-
-  return (
-    <ToggleWrapper>
-      <ToggleButton isOn={isOn} onClick={() => setIsOn(!isOn)}>
-        <ToggleKnob isOn={isOn} />
-      </ToggleButton>
-    </ToggleWrapper>
-  );
-};
-
-export default Toggle;
-
-
-//////////////////
-
-
 import React, { useState } from "react";
 import styled from "styled-components";
 
 const ToggleWrapper = styled.div`
   display: flex;
-  align-items: center;
   justify-content: center;
-  margin: 20px;
+  align-items: center;
+  padding: 20px;
 `;
 
 const ToggleButton = styled.button<{ isOn: boolean }>`
-  background-color: ${({ isOn }) => (isOn ? "#4caf50" : "#ccc")};
-  border: none;
-  border-radius: 20px;
-  width: 100px;
-  height: 30px;
   position: relative;
+  width: 80px;
+  height: 36px;
+  border: none;
+  border-radius: 18px;
+  background-color: ${({ isOn }) => (isOn ? "#4caf50" : "#ccc")};
   cursor: pointer;
+  padding: 0;
   transition: background-color 0.3s ease;
-  color: white;
-  font-weight: bold;
-  padding-left: 10px;
-  padding-right: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: ${({ isOn }) => (isOn ? "flex-end" : "center")};
 `;
 
 const ToggleKnob = styled.div<{ isOn: boolean }>`
+  width: 28px;
+  height: 28px;
   background-color: white;
-  width: 24px;
-  height: 24px;
   border-radius: 50%;
-  position: absolute;
-  top: 3px;
-  left: ${({ isOn }) => (isOn ? "70px" : "3px")};
-  transition: left 0.3s ease;
+  margin: 4px;
+  transition: all 0.3s ease;
 `;
 
-const Toggle = () => {
+const Label = styled.span`
+  position: absolute;
+  left: 12px;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+`;
+
+type ToggleProps = {
+  onToggle?: (isOn: boolean) => void;
+};
+
+const Toggle: React.FC<ToggleProps> = ({ onToggle }) => {
   const [isOn, setIsOn] = useState(false);
+
+  const handleClick = () => {
+    const newState = !isOn;
+    setIsOn(newState);
+    onToggle?.(newState); // callback
+  };
 
   return (
     <ToggleWrapper>
-      <ToggleButton isOn={isOn} onClick={() => setIsOn(!isOn)}>
-        {isOn ? "Active" : "Inactive"}
+      <ToggleButton isOn={isOn} onClick={handleClick}>
+        {!isOn && <Label>Activate</Label>}
         <ToggleKnob isOn={isOn} />
       </ToggleButton>
     </ToggleWrapper>
