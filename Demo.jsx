@@ -1,68 +1,66 @@
-import React, { useState } from "react";
-import styled from "styled-components";
+import React from 'react';
+import styled from 'styled-components';
+import { Slider } from 'your-internal-lib';
+import { FaLock } from 'react-icons/fa'; // or any lock icon
 
-const ToggleWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-`;
-
-const ToggleButton = styled.button<{ isOn: boolean }>`
+const SliderWrapper = styled.div`
   position: relative;
-  width: 80px;
-  height: 36px;
-  border: none;
-  border-radius: 18px;
-  background-color: ${({ isOn }) => (isOn ? "#4caf50" : "#ccc")};
-  cursor: pointer;
-  padding: 0;
-  transition: background-color 0.3s ease;
-  overflow: hidden;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+
+  @media (max-width: 600px) {
+    max-width: 90%;
+  }
+`;
+
+const StyledSlider = styled(Slider)<{ disabled?: boolean }>`
+  width: 100%;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
+`;
+
+const LockOverlay = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
-  justify-content: ${({ isOn }) => (isOn ? "flex-end" : "center")};
+  color: #555;
+  font-size: 1.2rem;
 `;
 
-const ToggleKnob = styled.div<{ isOn: boolean }>`
-  width: 28px;
-  height: 28px;
-  background-color: white;
-  border-radius: 50%;
-  margin: 4px;
-  transition: all 0.3s ease;
+const LockBox = styled.div`
+  position: relative;
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 1rem;
 `;
 
-const Label = styled.span`
-  position: absolute;
-  left: 12px;
+const ActivateButton = styled.button`
+  margin-left: auto;
+  padding: 0.3rem 0.6rem;
+  background: #888;
+  border: none;
+  border-radius: 4px;
   color: white;
-  font-size: 12px;
-  font-weight: 500;
-  pointer-events: none;
+  font-size: 0.8rem;
+  cursor: not-allowed;
 `;
 
-type ToggleProps = {
-  onToggle?: (isOn: boolean) => void;
-};
-
-const Toggle: React.FC<ToggleProps> = ({ onToggle }) => {
-  const [isOn, setIsOn] = useState(false);
-
-  const handleClick = () => {
-    const newState = !isOn;
-    setIsOn(newState);
-    onToggle?.(newState); // callback
-  };
-
+export const PensionSlider = ({ locked }: { locked: boolean }) => {
   return (
-    <ToggleWrapper>
-      <ToggleButton isOn={isOn} onClick={handleClick}>
-        {!isOn && <Label>Activate</Label>}
-        <ToggleKnob isOn={isOn} />
-      </ToggleButton>
-    </ToggleWrapper>
+    <LockBox>
+      <SliderWrapper>
+        {locked && (
+          <LockOverlay>
+            <FaLock />
+          </LockOverlay>
+        )}
+        <StyledSlider disabled={locked} />
+      </SliderWrapper>
+      {locked && <ActivateButton disabled>Activate</ActivateButton>}
+    </LockBox>
   );
 };
-
-export default Toggle;
