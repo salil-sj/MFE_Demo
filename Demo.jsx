@@ -11,71 +11,72 @@ const Container = styled.div`
 
 const TopRow = styled.div`
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   flex-wrap: wrap;
-  justify-content: start;
-  align-items: stretch;
 
   @media (max-width: 768px) {
-    flex-direction: column-reverse;
-    align-items: flex-start;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
   }
 `;
 
-const LeftGroup = styled.div`
+const LeftBoxes = styled.div`
   display: flex;
-  flex-wrap: wrap;
+  gap: 10px;
+
+  @media (max-width: 768px) {
+    flex-direction: row;
+    gap: 5px;
+  }
+`;
+
+const Yellow = styled.div`
+  background-color: yellow;
+  width: 80px;
+  height: 40px;
+`;
+
+const Blue = styled.div`
+  background-color: blue;
+  width: 120px;
+  height: 40px;
+`;
+
+const Green = styled.div`
+  background-color: green;
+  width: 50px;
+  height: 60px;
+
+  @media (max-width: 768px) {
+    height: 40px;
+  }
+`;
+
+const Red = styled.div`
+  background-color: red;
+  margin-top: 10px;
+  height: 40px;
+
+  /* Take width equal to Yellow + Blue + gap (desktop) */
+  width: calc(80px + 120px + 10px);
 
   @media (max-width: 768px) {
     width: 100%;
   }
 `;
 
-const Yellow = styled.div`
-  background-color: yellow;
-  width: 60px;
-  height: 30px;
-
-  @media (max-width: 768px) {
-    width: 40%;
-  }
-`;
-
-const Blue = styled.div`
-  background-color: blue;
-  width: 100px;
-  height: 30px;
-
-  @media (max-width: 768px) {
-    width: 60%;
-  }
-`;
-
-const Green = styled.div`
-  background-color: green;
-  width: 50px;
-  height: 70px;
-  margin-left: 10px;
-
-  @media (max-width: 768px) {
-    margin: 0 auto 10px auto;
-  }
-`;
-
-const Red = styled.div`
-  background-color: red;
-  height: 30px;
-  margin-top: 10px;
-  width: 100%;
-`;
-
 const ResponsiveLayout = () => {
   return (
     <Container>
       <TopRow>
-        <LeftGroup>
+        <LeftBoxes>
           <Yellow />
           <Blue />
-        </LeftGroup>
+        </LeftBoxes>
         <Green />
       </TopRow>
       <Red />
