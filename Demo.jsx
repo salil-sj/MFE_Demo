@@ -1,87 +1,92 @@
-// App.js
 import React from 'react';
 import styled from 'styled-components';
 
-const Container = styled.div`
-  border: 2px solid black;
-  padding: 10px;
-  max-width: 90%;
-  margin: auto;
-`;
-
-const TopRow = styled.div`
+// --- Styled Container ---
+const Wrapper = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #ccc; /* just for visual reference */
 
   @media (max-width: 768px) {
-    flex-wrap: nowrap;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
   }
 `;
 
-const LeftBoxes = styled.div`
+const LabelWrapper = styled.div`
   display: flex;
-  gap: 10px;
-
-  @media (max-width: 768px) {
-    flex-direction: row;
-    gap: 5px;
-  }
+  align-items: center;
+  gap: 8px;
 `;
 
-const Yellow = styled.div`
-  background-color: yellow;
-  width: 80px;
-  height: 40px;
-`;
-
-const Blue = styled.div`
-  background-color: blue;
-  width: 120px;
-  height: 40px;
-`;
-
-const Green = styled.div`
-  background-color: green;
-  width: 50px;
-  height: 60px;
-
-  @media (max-width: 768px) {
-    height: 40px;
-  }
-`;
-
-const Red = styled.div`
-  background-color: red;
-  margin-top: 10px;
-  height: 40px;
-
-  /* Take width equal to Yellow + Blue + gap (desktop) */
-  width: calc(80px + 120px + 10px);
+const AmountWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
   @media (max-width: 768px) {
     width: 100%;
   }
 `;
 
-const ResponsiveLayout = () => {
+const SliderWrapper = styled.div`
+  flex: 1;
+  min-width: 200px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`;
+
+const StaggeringWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+`;
+
+// --- Main Component ---
+const PensionPayoutSection = () => {
   return (
-    <Container>
-      <TopRow>
-        <LeftBoxes>
-          <Yellow />
-          <Blue />
-        </LeftBoxes>
-        <Green />
-      </TopRow>
-      <Red />
-    </Container>
+    <Wrapper>
+      <LabelWrapper>
+        {/* Person Icon from internal library */}
+        {/* <PersonIcon /> */}
+        <Label>Payout amount pension</Label>
+      </LabelWrapper>
+
+      <AmountWrapper>
+        {/* Currency Dropdown from internal library */}
+        {/* <CurrencyDropdown defaultValue="USD" /> */}
+
+        {/* Textbox from internal library */}
+        {/* <TextBox placeholder="0" /> */}
+      </AmountWrapper>
+
+      <StaggeringWrapper>
+        <Label>Staggering (share)</Label>
+        {/* Decrement Button from internal library */}
+        {/* <DecrementButton /> */}
+
+        {/* Number Display from internal library */}
+        {/* <DisplayNumber value={1} /> */}
+
+        {/* Increment Button from internal library */}
+        {/* <IncrementButton /> */}
+      </StaggeringWrapper>
+
+      <SliderWrapper>
+        {/* Slider from internal library */}
+        {/* <Slider min={0} max={80000} step={1000} /> */}
+      </SliderWrapper>
+    </Wrapper>
   );
 };
 
-export default ResponsiveLayout;
+export default PensionPayoutSection;
