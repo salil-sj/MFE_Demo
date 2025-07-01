@@ -1,13 +1,11 @@
-import React from 'react';
-import styled from 'styled-components';
-
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 16px;
 
-  border: 1px solid #ccc; /* Optional visual aid */
+  max-width: 800px; /* adjust to match your design width */
+  margin: 0 auto; /* center the component on the screen */
 `;
 
 const TopRow = styled.div`
@@ -41,44 +39,17 @@ const StaggeringWrapper = styled.div`
 `;
 
 const SliderWrapper = styled.div`
-  width: 100%; /* Ensures it always spans full width */
+  width: 100%;
+
+  @media (min-width: 769px) {
+    max-width: 800px; /* match Wrapper */
+  }
+
+  @media (max-width: 768px) {
+    width: 100%; /* full width on mobile */
+  }
 `;
 
 const Label = styled.label`
   font-weight: 500;
 `;
-
-const PensionPayoutSection = () => {
-  return (
-    <Wrapper>
-      <TopRow>
-        <LabelWrapper>
-          {/* Person Icon from internal library */}
-          {/* <PersonIcon /> */}
-          <Label>Payout amount pension</Label>
-        </LabelWrapper>
-
-        <AmountWrapper>
-          {/* Currency Dropdown from internal library */}
-          {/* <CurrencyDropdown defaultValue="USD" /> */}
-          {/* Textbox from internal library */}
-          {/* <TextBox placeholder="0" /> */}
-        </AmountWrapper>
-
-        <StaggeringWrapper>
-          <Label>Staggering (share)</Label>
-          {/* <DecrementButton /> */}
-          {/* <DisplayNumber value={1} /> */}
-          {/* <IncrementButton /> */}
-        </StaggeringWrapper>
-      </TopRow>
-
-      <SliderWrapper>
-        {/* Slider from internal library */}
-        {/* <Slider min={0} max={80000} step={1000} /> */}
-      </SliderWrapper>
-    </Wrapper>
-  );
-};
-
-export default PensionPayoutSection;
