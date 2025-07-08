@@ -1,55 +1,63 @@
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+// Dashboard.js
+import React from 'react';
+import styled from 'styled-components';
 
-  max-width: 800px; /* adjust to match your design width */
-  margin: 0 auto; /* center the component on the screen */
+const data = [
+  { title: 'Users', count: 128 },
+  { title: 'Orders', count: 57 },
+  { title: 'Revenue', count: '$3,200' },
+  { title: 'Feedbacks', count: 24 },
+];
+
+const Dashboard = () => {
+  return (
+    <Container>
+      {data.map((item, index) => (
+        <Card key={index}>
+          <Title>{item.title}</Title>
+          <Count>{item.count}</Count>
+        </Card>
+      ))}
+    </Container>
+  );
+};
+
+export default Dashboard;
+
+
+
+// You can define these in the same file or extract to styles.js
+
+import styled from 'styled-components';
+
+const Container = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  padding: 20px;
 `;
 
-const TopRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
+const Card = styled.div`
+  background-color: #f9f9f9;
+  padding: 25px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
+  &:hover {
+    transform: translateY(-5px);
   }
 `;
 
-const LabelWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
+const Title = styled.h3`
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
 `;
 
-const AmountWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const StaggeringWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-`;
-
-const SliderWrapper = styled.div`
-  width: 100%;
-
-  @media (min-width: 769px) {
-    max-width: 800px; /* match Wrapper */
-  }
-
-  @media (max-width: 768px) {
-    width: 100%; /* full width on mobile */
-  }
-`;
-
-const Label = styled.label`
-  font-weight: 500;
+const Count = styled.p`
+  margin: 10px 0 0;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #007bff;
 `;
