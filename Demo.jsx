@@ -1,94 +1,101 @@
-interface BarChartData {
+import React, { useEffect, useRef, useState } from 'react';
+import styled from 'styled-components';
+import { calculateBarHeights } from './barChartUtils'; // <-- Your function here
+
+interface BarChartProps {
   taxSavingsSinglePurchase: number;
   improvementWithStaggering: number;
   taxSavingsOfStaggeredPurchase: number;
-  widgetWidth: number;
 }
 
-interface BarSegment {
-  height: number;
-  emptyHeight: number;
-  label: string;
-  color: string;
+const ChartWrapper = styled.div`
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 300px; // max height
+  width: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+`;
+
+const BarContainer = styled.div`
+  flex: 1;
+  margin: 0 8px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+`;
+
+const FilledBar = styled.div<{ height: number; color: string }>`
+  height: ${({ height }) => height}%;
+  width: 100%;
+  background-color: ${({ color }) => color};
+  border-radius: 4px 4px 0 0;
+`;
+
+const EmptyBar = styled.div<{ height: number }>`
+  height: ${({ height }) => height}%;
+  width: 100%;
+`;
+
+const Label = styled.div`
+  margin-top: 8px;
+  font-size: 12px;
+  text-align: center;
+`;
+
+const BarChart: React.FC<BarChartProps> = ({
+  taxSavingsSinglePurchase,
+  improvementWithStaggering,
+  taxSavingsOfStaggeredPurchase
+}) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [widgetWidth, setWidgetWidth] = useState<number>(800);
+
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setWidgetWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(wrapperRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const barData = calculateBarHeights({
+    taxSavingsSinglePurchase,
+    improvementWithStaggering,
+    taxSavingsOfStaggeredPurchase,
+    widgetWidth
+  });
+
+  const bars = [barData.singlePurchase, barData.improvement, barData.staggeredPurchase];
+
+  return (
+    <ChartWrapper ref={wrapperRef}>
+      {bars.map((bar, index) => (
+        <BarContainer key={index}>
+          <FilledBar height={bar.height} color={getColor(bar.color)} />
+          <EmptyBar height={bar.emptyHeight} />
+          <Label>{bar.label}</Label>
+        </BarContainer>
+      ))}
+    </ChartWrapper>
+  );
+};
+
+// Map legacy color names to actual hex codes
+function getColor(name: string): string {
+  switch (name) {
+    case 'fern': return '#4F7942';
+    case 'stone': return '#787276';
+    case 'olive': return '#708238';
+    case 'smoke': return '#999999';
+    default: return '#cccccc';
+  }
 }
 
-export function calculateBarHeights(data: BarChartData): {
-  singlePurchase: BarSegment;
-  improvement: BarSegment;
-  staggeredPurchase: BarSegment;
-} {
-  const o = data;
-
-  // Default segment height fallback
-  const defaultHeight = 100;
-  let minLines = o.widgetWidth < 500 ? 3 : 2;
-
-  // === 1. Tax savings from single purchase ===
-  let taxSavingsSinglePurchaseHeight = o.taxSavingsSinglePurchase;
-  let taxSavingsSinglePurchaseEmptySegmentHeight = o.improvementWithStaggering < 0 ? 0 : o.improvementWithStaggering;
-
-  if (Math.abs(o.improvementWithStaggering) === Math.abs(o.taxSavingsSinglePurchase)) {
-    taxSavingsSinglePurchaseHeight = 100;
-  }
-  if (taxSavingsSinglePurchaseHeight === 0) {
-    taxSavingsSinglePurchaseHeight = 100;
-  }
-
-  const singlePurchase: BarSegment = {
-    height: taxSavingsSinglePurchaseHeight,
-    emptyHeight: taxSavingsSinglePurchaseEmptySegmentHeight,
-    label: "Tax savings single purchase",
-    color: "fern"
-  };
-
-  // === 2. Improvement with staggering ===
-  let improvementWithStaggeringHeight = o.improvementWithStaggering;
-  let improvementWithStaggeringEmptySegmentHeight = o.taxSavingsSinglePurchase;
-
-  if (Math.abs(o.improvementWithStaggering) === Math.abs(o.taxSavingsSinglePurchase)) {
-    improvementWithStaggeringHeight = 100;
-  }
-
-  if (o.improvementWithStaggering === 0 && o.taxSavingsSinglePurchase === 0) {
-    improvementWithStaggeringEmptySegmentHeight = 100;
-  }
-
-  const improvement: BarSegment = {
-    height: improvementWithStaggeringHeight,
-    emptyHeight: improvementWithStaggeringEmptySegmentHeight,
-    label: "Improvement with staggering",
-    color: "stone"
-  };
-
-  // === 3. Tax savings of staggered purchase ===
-  let taxSavingsOfStaggeredPurchaseHeight = o.taxSavingsOfStaggeredPurchase;
-  let taxSavingsOfStaggeredPurchaseEmptySegmentHeight = 0;
-  let barColor = "olive";
-
-  if (o.improvementWithStaggering < 0) {
-    barColor = "smoke";
-    if (Math.abs(o.improvementWithStaggering) === Math.abs(o.taxSavingsSinglePurchase)) {
-      taxSavingsOfStaggeredPurchaseHeight = 0;
-      taxSavingsOfStaggeredPurchaseEmptySegmentHeight = 100;
-    } else {
-      taxSavingsOfStaggeredPurchaseEmptySegmentHeight = o.improvementWithStaggering;
-    }
-  }
-
-  if (taxSavingsOfStaggeredPurchaseHeight === 0) {
-    taxSavingsOfStaggeredPurchaseHeight = 100;
-  }
-
-  const staggeredPurchase: BarSegment = {
-    height: taxSavingsOfStaggeredPurchaseHeight,
-    emptyHeight: taxSavingsOfStaggeredPurchaseEmptySegmentHeight,
-    label: "Tax savings staggered purchase",
-    color: barColor
-  };
-
-  return {
-    singlePurchase,
-    improvement,
-    staggeredPurchase
-  };
-}
+export default BarChart;
