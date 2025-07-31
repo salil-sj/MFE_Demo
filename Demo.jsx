@@ -1,7 +1,6 @@
 function getCleanRulerStep(maxValue: number): number {
-  const roughStep = maxValue / 10;
+  const roughStep = maxValue / 5; // 👈 Only change from 10 to 5
 
-  // Round roughStep to the next "nice" power-of-10 multiple
   const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
   const multiples = [1, 2, 5, 10];
 
@@ -12,6 +11,5 @@ function getCleanRulerStep(maxValue: number): number {
     }
   }
 
-  // fallback in case nothing matches (shouldn't happen)
   return 10 * magnitude;
 }
