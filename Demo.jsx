@@ -1,11 +1,17 @@
-const FilledBar = styled.div<{ height: number; color: string }>`
-  height: ${({ height }) => `${height}px`};
-  width: 100%;
-  background-color: ${({ color }) => color};
-  border-radius: 4px 4px 0 0;
-`;
+function getCleanRulerStep(maxValue: number): number {
+  const roughStep = maxValue / 10;
 
-const EmptyBar = styled.div<{ height: number }>`
-  height: ${({ height }) => `${height}px`};
-  width: 100%;
-`;
+  // Round roughStep to the next "nice" power-of-10 multiple
+  const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const multiples = [1, 2, 5, 10];
+
+  for (let i = 0; i < multiples.length; i++) {
+    const cleanStep = multiples[i] * magnitude;
+    if (cleanStep >= roughStep) {
+      return cleanStep;
+    }
+  }
+
+  // fallback in case nothing matches (shouldn't happen)
+  return 10 * magnitude;
+}
