@@ -1,167 +1,134 @@
-import React, { useMemo, useRef, useState } from "react";
+// CustomSlider.tsx
+import React, { useState } from "react";
 import styled from "styled-components";
 
-interface SliderProps {
-  id?: string;
-  label?: string;
-  value: number;
-  onChange: (value: number) => void;
-  minValue: number;
-  maxValue: number;
-  sliderSteps: number;
+interface CustomSliderProps {
+  minValue?: number;
+  maxValue?: number;
+  step?: number;
+  initialValue?: number;
 }
 
 const SliderWrapper = styled.div`
-  width: 100%;
-  padding: 1rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-`;
-
-const TrackWrapper = styled.div`
   position: relative;
   width: 100%;
+  padding: 20px 0;
 `;
 
-const Tooltip = styled.div<{ left: number }>`
-  position: absolute;
-  bottom: 25px;
-  left: ${({ left }) => left}px;
-  transform: translateX(-50%);
-  background: #444;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  pointer-events: none;
-`;
-
-const StyledInput = styled.input<{ value: number; max: number }>`
+const StyledInput = styled.input.attrs({ type: "range" })<{
+  value: number;
+  min: number;
+  max: number;
+}>`
+  -webkit-appearance: none;
   width: 100%;
-  margin: 10px 0;
-  appearance: none;
   height: 8px;
-  border-radius: 10px;
   background: transparent;
-  border: 1px solid black;
+  position: relative;
+  z-index: 3;
+
+  &::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: transparent;
+    border: 1px solid black;
+    border-radius: 4px;
+  }
 
   &::-webkit-slider-thumb {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border: 3px solid #6c7347;
+    -webkit-appearance: none;
+    height: 24px;
+    width: 24px;
     border-radius: 50%;
-    margin-top: -6px; /* Align center vertically */
+    border: 2px solid #007bff;
+    background: white;
     cursor: pointer;
+    margin-top: -8px; /* aligns thumb to center of track */
     position: relative;
-    z-index: 10;
+    z-index: 5;
   }
 
   &::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: white;
-    border: 3px solid #6c7347;
+    height: 24px;
+    width: 24px;
     border-radius: 50%;
+    border: 2px solid #007bff;
+    background: white;
     cursor: pointer;
-  }
-
-  &::-webkit-slider-runnable-track {
-    height: 8px;
-    border-radius: 10px;
-    background: transparent;
-    border: 1px solid black;
   }
 
   &::-moz-range-track {
     height: 8px;
-    border-radius: 10px;
     background: transparent;
     border: 1px solid black;
+    border-radius: 4px;
   }
 `;
 
-const Ruler = styled.div`
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.7rem;
-  color: #444;
-  overflow: hidden;
+const FillTrack = styled.div<{ fillPercent: number }>`
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 8px;
+  width: ${({ fillPercent }) => fillPercent}%;
+  background-color: green;
+  border-radius: 4px;
+  transform: translateY(-50%);
+  z-index: 2;
 `;
 
-function formatRulerValue(value: number): string {
-  if (value >= 10000000) return `${value / 10000000}Cr`;
-  if (value >= 100000) return `${value / 100000}L`;
-  if (value >= 1000) return `${value / 1000}k`;
-  return `${value}`;
-}
+const Tooltip = styled.div<{ visible: boolean; value: number }>`
+  position: absolute;
+  top: -30px;
+  left: ${({ value }) => value}%;
+  transform: translateX(-50%);
+  background: black;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: ${({ visible }) => (visible ? 1 : 0)};
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+`;
 
-function generateRulerSteps(maxValue: number): number[] {
-  const stepCount = 5;
-  const step = Math.ceil(maxValue / stepCount);
-  const roundedStep = Math.pow(10, Math.floor(Math.log10(step)));
-  const finalStep = Math.ceil(step / roundedStep) * roundedStep;
-  return Array.from({ length: stepCount }, (_, i) => finalStep * (i + 1));
-}
-
-export const CustomSlider: React.FC<SliderProps> = ({
-  id,
-  label,
-  value,
-  onChange,
-  minValue,
-  maxValue,
-  sliderSteps,
+const CustomSlider: React.FC<CustomSliderProps> = ({
+  minValue = 0,
+  maxValue = 100,
+  step = 1,
+  initialValue = 50,
 }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const [value, setValue] = useState<number>(initialValue);
+  const [showTooltip, setShowTooltip] = useState<boolean>(false);
 
-  const rulerSteps = useMemo(() => generateRulerSteps(maxValue), [maxValue]);
-
-  const getTooltipLeft = () => {
-    if (!trackRef.current) return 0;
-    const trackWidth = trackRef.current.offsetWidth;
-    const percentage = (value - minValue) / (maxValue - minValue);
-    return percentage * trackWidth;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(Number(e.target.value));
   };
+
+  const handleMouseDown = () => setShowTooltip(true);
+  const handleMouseUp = () => setShowTooltip(false);
+
+  const fillPercent = ((value - minValue) / (maxValue - minValue)) * 100;
 
   return (
     <SliderWrapper>
-      {label && (
-        <Label htmlFor={id}>
-          {label} {value}
-        </Label>
-      )}
-      <TrackWrapper ref={trackRef}>
-        {isDragging && <Tooltip left={getTooltipLeft()}>{value}</Tooltip>}
-        <StyledInput
-          type="range"
-          id={id}
-          min={minValue}
-          max={maxValue}
-          step={sliderSteps}
-          value={value}
-          onMouseDown={() => setIsDragging(true)}
-          onMouseUp={() => setIsDragging(false)}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={() => setIsDragging(false)}
-          onChange={(e) => onChange(Number(e.target.value))}
-          value={value}
-          max={maxValue}
-        />
-      </TrackWrapper>
-      <Ruler>
-        <span>0</span>
-        {rulerSteps.map((val, i) => (
-          <span key={i}>{formatRulerValue(val)}</span>
-        ))}
-      </Ruler>
+      <Tooltip visible={showTooltip} value={fillPercent}>
+        {value}
+      </Tooltip>
+      <FillTrack fillPercent={fillPercent} />
+      <StyledInput
+        min={minValue}
+        max={maxValue}
+        step={step}
+        value={value}
+        onChange={handleChange}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleMouseDown}
+        onTouchEnd={handleMouseUp}
+      />
     </SliderWrapper>
   );
 };
+
+export default CustomSlider;
