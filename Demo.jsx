@@ -10,8 +10,8 @@ interface SliderProps {
 }
 
 const SliderWrapper = styled.div`
-  width: 600px;
-  margin: 20px 0;
+  width: 400px;
+  margin: 15px 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 `;
 
@@ -19,65 +19,65 @@ const TopSection = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
 `;
 
 const LogoSection = styled.div`
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
 `;
 
 const LogoPlaceholder = styled.div`
-  width: 70px;
-  height: 45px;
+  width: 45px;
+  height: 30px;
   border: 2px solid #2c3e50;
   background-color: #ecf0f1;
   position: relative;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
   
   &::after {
     content: '↓';
     position: absolute;
-    top: -12px;
+    top: -8px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 18px;
+    font-size: 12px;
     font-weight: bold;
     color: #2c3e50;
   }
 `;
 
 const LogoText = styled.span`
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   color: #2c3e50;
 `;
 
 const PurchaseText = styled.span`
-  font-size: 15px;
+  font-size: 12px;
   color: #34495e;
-  margin-left: 10px;
+  margin-left: 6px;
 `;
 
 const AmountBox = styled.input`
-  width: 140px;
-  height: 40px;
+  width: 90px;
+  height: 28px;
   border: 2px solid #bdc3c7;
   background-color: white;
-  padding: 8px 12px;
-  font-size: 14px;
+  padding: 4px 8px;
+  font-size: 12px;
   font-weight: 500;
   text-align: right;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   transition: all 0.2s ease;
   
   &:focus {
     outline: none;
     border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
   }
   
   &::placeholder {
@@ -88,15 +88,15 @@ const AmountBox = styled.input`
 
 const SliderContainer = styled.div`
   width: 100%;
-  height: 90px;
+  height: 60px;
   background: linear-gradient(to bottom, #f8f9fa 0%, #ecf0f1 100%);
   border: 2px solid #bdc3c7;
   position: relative;
   overflow: hidden;
   user-select: none;
   cursor: grab;
-  border-radius: 6px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
   
   &:active {
     cursor: grabbing;
@@ -114,28 +114,28 @@ const DownArrow = styled.div`
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 14px solid transparent;
-  border-right: 14px solid transparent;
-  border-top: 18px solid #e74c3c;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 12px solid #e74c3c;
   z-index: 10;
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
 `;
 
 const ScaleContainer = styled.div<{ offset: number }>`
   position: absolute;
-  top: 18px;
+  top: 12px;
   left: 0;
-  height: calc(100% - 18px);
+  height: calc(100% - 12px);
   transform: translateX(${props => props.offset}px);
   display: flex;
   align-items: flex-start;
 `;
 
 const ScaleLine = styled.div<{ height: number; lineType: 'big' | 'medium' | 'small' }>`
-  width: ${props => props.lineType === 'big' ? '3px' : props.lineType === 'medium' ? '2px' : '1px'};
+  width: ${props => props.lineType === 'big' ? '2px' : props.lineType === 'medium' ? '1.5px' : '1px'};
   height: ${props => props.height}px;
   background-color: ${props => props.lineType === 'big' ? '#2c3e50' : props.lineType === 'medium' ? '#34495e' : '#7f8c8d'};
-  margin-right: ${props => 50 - (props.lineType === 'big' ? 1.5 : props.lineType === 'medium' ? 1 : 0.5)}px;
+  margin-right: ${props => 33 - (props.lineType === 'big' ? 1 : props.lineType === 'medium' ? 0.75 : 0.5)}px;
   position: relative;
   
   &:last-child {
@@ -145,14 +145,14 @@ const ScaleLine = styled.div<{ height: number; lineType: 'big' | 'medium' | 'sma
 
 const ScaleLabel = styled.div`
   position: absolute;
-  top: 35px;
+  top: 22px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
   color: #2c3e50;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+  text-shadow: 0 1px 1px rgba(255,255,255,0.8);
 `;
 
 const PrecisionSlider: React.FC<SliderProps> = ({ 
@@ -173,17 +173,17 @@ const PrecisionSlider: React.FC<SliderProps> = ({
   }, [value]);
 
   const calculateOffset = useCallback((val: number) => {
-    const containerWidth = 600;
+    const containerWidth = 400; // Updated container width
     const centerX = containerWidth / 2;
-    const pixelsPerUnit = 50 / 500; // 50px per 500 units
+    const pixelsPerUnit = 33 / 500; // 33px per 500 units (adjusted for smaller size)
     const valueOffset = (val - minValue) * pixelsPerUnit;
     return centerX - valueOffset;
   }, [minValue]);
 
   const calculateValueFromOffset = useCallback((offset: number) => {
-    const containerWidth = 600;
+    const containerWidth = 400; // Updated container width
     const centerX = containerWidth / 2;
-    const pixelsPerUnit = 50 / 500; // 50px per 500 units
+    const pixelsPerUnit = 33 / 500; // 33px per 500 units (adjusted for smaller size)
     const valueOffset = (centerX - offset) / pixelsPerUnit;
     const newValue = minValue + valueOffset;
     
@@ -208,13 +208,13 @@ const PrecisionSlider: React.FC<SliderProps> = ({
       // Small lines for everything else
       if (i % 10 === 0) {
         lineType = 'big';
-        height = 40;
+        height = 25;
       } else if (i % 5 === 0) {
         lineType = 'medium';
-        height = 25;
+        height = 18;
       } else {
         lineType = 'small';
-        height = 15;
+        height = 12;
       }
       
       marks.push(
