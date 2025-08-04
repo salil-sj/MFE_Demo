@@ -1,53 +1,20 @@
 import React, { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-interface RulerSliderProps {
+type SliderProps = {
   minValue: number;
   maxValue: number;
   value: number;
-  onChange: (val: number) => void;
-}
-
-const STEP = 500;
-const TICK_WIDTH = 20; // px per tick
+  setValue: (val: number) => void;
+};
 
 const Container = styled.div`
   width: 100%;
+  height: 100px;
+  background: #f5f5f5;
+  position: relative;
   overflow: hidden;
-  position: relative;
-  padding: 40px 0;
-`;
-
-const RulerWrapper = styled.div`
-  position: relative;
-  height: 50px;
-`;
-
-const Ruler = styled.div<{ width: number; offset: number }>`
-  display: flex;
-  position: absolute;
-  left: ${props => props.offset}px;
-  transition: left 0.2s ease;
-`;
-
-const Tick = styled.div`
-  width: ${TICK_WIDTH}px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  &::before {
-    content: '';
-    width: 1px;
-    height: 12px;
-    background-color: #000;
-    margin-bottom: 4px;
-  }
-
-  span {
-    font-size: 10px;
-    color: #333;
-  }
+  border: 1px solid #ccc;
 `;
 
 const Arrow = styled.div`
@@ -55,84 +22,100 @@ const Arrow = styled.div`
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 20px;
-  color: #000;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 20px solid black;
+  z-index: 2;
 `;
 
-const RulerSlider: React.FC<RulerSliderProps> = ({ minValue, maxValue, value, onChange }) => {
-  const totalSteps = Math.floor((maxValue - minValue) / STEP);
-  const [offset, setOffset] = useState(0);
-  const sliderRef = useRef<HTMLDivElement>(null);
+const Scale = styled.div<{ offsetX: number }>`
+  position: absolute;
+  top: 20px;
+  left: ${(props) => props.offsetX}px;
+  height: 80px;
+  display: flex;
+`;
 
-  const center = () => {
-    if (!sliderRef.current) return;
-    const containerWidth = sliderRef.current.offsetWidth;
-    const index = (value - minValue) / STEP;
-    const offset = containerWidth / 2 - index * TICK_WIDTH;
-    setOffset(offset);
+const Tick = styled.div<{ height: number }>`
+  width: 2px;
+  background: black;
+  margin-right: 18px;
+  height: ${(props) => props.height}px;
+`;
+
+const Label = styled.div`
+  position: absolute;
+  top: 60px;
+  font-size: 12px;
+  transform: translateX(-50%);
+  color: black;
+`;
+
+const CustomSlider: React.FC<SliderProps> = ({ minValue, maxValue, value, setValue }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [offsetX, setOffsetX] = useState(0);
+
+  const step = 500;
+  const totalSteps = Math.floor((maxValue - minValue) / step);
+  const stepWidth = 20; // 500px == 20px
+
+  const handleDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    const startX = e.clientX;
+    const startOffset = offsetX;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const diff = moveEvent.clientX - startX;
+      let newOffset = startOffset + diff;
+
+      const maxOffset = 0;
+      const minOffset = -totalSteps * stepWidth + (containerRef.current?.offsetWidth || 0) / 2;
+
+      newOffset = Math.min(maxOffset, Math.max(minOffset, newOffset));
+      setOffsetX(newOffset);
+
+      const sliderVal = minValue + Math.round(((-1 * newOffset) + (containerRef.current!.offsetWidth / 2)) / stepWidth) * step;
+      setValue(Math.min(maxValue, Math.max(minValue, sliderVal)));
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   };
 
   useEffect(() => {
-    center();
-  }, [value, minValue, maxValue]);
-
-  const isDragging = useRef(false);
-  const dragStartX = useRef(0);
-  const startOffset = useRef(0);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true;
-    dragStartX.current = e.clientX;
-    startOffset.current = offset;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging.current) return;
-    const delta = e.clientX - dragStartX.current;
-    const newOffset = startOffset.current + delta;
-    const containerWidth = sliderRef.current?.offsetWidth || 0;
-    const maxOffset = containerWidth / 2;
-    const minOffset = containerWidth / 2 - totalSteps * TICK_WIDTH;
-    const clampedOffset = Math.max(Math.min(newOffset, maxOffset), minOffset);
-    setOffset(clampedOffset);
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    // Snap to nearest
-    const containerWidth = sliderRef.current?.offsetWidth || 0;
-    const index = Math.round((containerWidth / 2 - offset) / TICK_WIDTH);
-    const newValue = minValue + index * STEP;
-    onChange(Math.max(minValue, Math.min(maxValue, newValue)));
-  };
+    const initialOffset = -((value - minValue) / step) * stepWidth + (containerRef.current!.offsetWidth / 2);
+    setOffsetX(initialOffset);
+  }, [value, minValue]);
 
   const renderTicks = () => {
     const ticks = [];
     for (let i = 0; i <= totalSteps; i++) {
-      const val = minValue + i * STEP;
+      const val = minValue + i * step;
+      let height = 20;
+      if (i % 10 === 0) height = 40;
+      else if (i % 5 === 0) height = 30;
       ticks.push(
-        <Tick key={i}>
-          <span>{val.toLocaleString()}</span>
-        </Tick>
+        <div key={i} style={{ position: 'relative' }}>
+          <Tick height={height} />
+          {i % 10 === 0 && <Label>{val.toLocaleString()}</Label>}
+        </div>
       );
     }
     return ticks;
   };
 
   return (
-    <Container ref={sliderRef}>
-      <Arrow>▼</Arrow>
-      <RulerWrapper>
-        <Ruler offset={offset} width={(totalSteps + 1) * TICK_WIDTH} onMouseDown={handleMouseDown}>
-          {renderTicks()}
-        </Ruler>
-      </RulerWrapper>
+    <Container ref={containerRef} onMouseDown={handleDrag}>
+      <Arrow />
+      <Scale offsetX={offsetX}>{renderTicks()}</Scale>
     </Container>
   );
 };
 
-export default RulerSlider;
+export default CustomSlider;
