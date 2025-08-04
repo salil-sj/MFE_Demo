@@ -1,6 +1,19 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 
+interface CustomSliderProps {
+  minValue?: number;
+  maxValue?: number;
+  step?: number;
+  rulerStep?: number;
+  value?: number;
+  onChange?: (value: number) => void;
+  showValue?: boolean;
+  formatValue?: (val: number) => string;
+  formatRulerLabel?: (val: number) => string;
+  disabled?: boolean;
+}
+
 const SliderContainer = styled.div`
   width: 100%;
   padding: 40px 20px 20px;
@@ -46,11 +59,11 @@ const SliderThumb = styled.div`
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   transition: transform 0.1s ease;
-  
+
   &:hover {
     transform: translate(-50%, -50%) scale(1.1);
   }
-  
+
   &:active {
     transform: translate(-50%, -50%) scale(1.2);
   }
@@ -93,7 +106,7 @@ const ValueDisplay = styled.div`
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -105,7 +118,7 @@ const ValueDisplay = styled.div`
   }
 `;
 
-const CustomSlider = ({
+const CustomSlider: React.FC<CustomSliderProps> = ({
   minValue = 0,
   maxValue = 1000000,
   step = 500,
@@ -118,113 +131,105 @@ const CustomSlider = ({
   disabled = false,
   ...props
 }) => {
-  const [internalValue, setInternalValue] = useState(controlledValue || minValue);
-  const [isDragging, setIsDragging] = useState(false);
-  const sliderRef = useRef(null);
-  
+  const [internalValue, setInternalValue] = useState<number>(controlledValue || minValue);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
+
   const value = controlledValue !== undefined ? controlledValue : internalValue;
-  
-  // Format functions with defaults
-  const defaultFormatValue = (val) => {
+
+  const defaultFormatValue = (val: number): string => {
     if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
     if (val >= 1000) return `${(val / 1000).toFixed(0)}K`;
     return val.toString();
   };
-  
-  const defaultFormatRulerLabel = (val) => {
+
+  const defaultFormatRulerLabel = (val: number): string => {
     if (val >= 1000000) return `${val / 1000000}M`;
     if (val >= 1000) return `${val / 1000}K`;
     return val.toString();
   };
-  
+
   const valueFormatter = formatValue || defaultFormatValue;
   const rulerFormatter = formatRulerLabel || defaultFormatRulerLabel;
-  
-  // Calculate position percentage
-  const getPercentage = (val) => ((val - minValue) / (maxValue - minValue)) * 100;
-  
-  // Calculate value from percentage
-  const getValueFromPercentage = (percentage) => {
+
+  const getPercentage = (val: number): number => ((val - minValue) / (maxValue - minValue)) * 100;
+
+  const getValueFromPercentage = (percentage: number): number => {
     const rawValue = minValue + (percentage / 100) * (maxValue - minValue);
     return Math.round(rawValue / step) * step;
   };
-  
-  // Get value from mouse position
-  const getValueFromPosition = useCallback((clientX) => {
+
+  const getValueFromPosition = useCallback((clientX: number): number => {
     if (!sliderRef.current) return value;
-    
+
     const rect = sliderRef.current.getBoundingClientRect();
     const percentage = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
     return Math.max(minValue, Math.min(maxValue, getValueFromPercentage(percentage)));
   }, [minValue, maxValue, step, value]);
-  
-  // Handle value change
-  const handleValueChange = useCallback((newValue) => {
+
+  const handleValueChange = useCallback((newValue: number) => {
     if (disabled) return;
-    
+
     if (controlledValue === undefined) {
       setInternalValue(newValue);
     }
-    
+
     if (onChange) {
       onChange(newValue);
     }
   }, [controlledValue, onChange, disabled]);
-  
-  // Mouse event handlers
-  const handleMouseDown = useCallback((e) => {
+
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
-    
+
     e.preventDefault();
     setIsDragging(true);
     const newValue = getValueFromPosition(e.clientX);
     handleValueChange(newValue);
   }, [disabled, getValueFromPosition, handleValueChange]);
-  
-  const handleMouseMove = useCallback((e) => {
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || disabled) return;
-    
+
     e.preventDefault();
     const newValue = getValueFromPosition(e.clientX);
     handleValueChange(newValue);
   }, [isDragging, disabled, getValueFromPosition, handleValueChange]);
-  
+
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
-  
-  // Touch event handlers
-  const handleTouchStart = useCallback((e) => {
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     if (disabled) return;
-    
+
     e.preventDefault();
     setIsDragging(true);
     const touch = e.touches[0];
     const newValue = getValueFromPosition(touch.clientX);
     handleValueChange(newValue);
   }, [disabled, getValueFromPosition, handleValueChange]);
-  
-  const handleTouchMove = useCallback((e) => {
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging || disabled) return;
-    
+
     e.preventDefault();
     const touch = e.touches[0];
     const newValue = getValueFromPosition(touch.clientX);
     handleValueChange(newValue);
   }, [isDragging, disabled, getValueFromPosition, handleValueChange]);
-  
+
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
-  
-  // Add global event listeners
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('touchmove', handleTouchMove);
       document.addEventListener('touchend', handleTouchEnd);
-      
+
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -233,8 +238,7 @@ const CustomSlider = ({
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
-  
-  // Generate ruler marks
+
   const rulerMarks = [];
   for (let val = minValue; val <= maxValue; val += rulerStep) {
     const percentage = getPercentage(val);
@@ -244,9 +248,9 @@ const CustomSlider = ({
       label: rulerFormatter(val)
     });
   }
-  
+
   const currentPercentage = getPercentage(value);
-  
+
   return (
     <SliderContainer {...props}>
       <SliderWrapper
@@ -257,9 +261,9 @@ const CustomSlider = ({
         <SliderTrack>
           <SliderFill style={{ width: `${currentPercentage}%` }} />
         </SliderTrack>
-        
-        <SliderThumb 
-          style={{ 
+
+        <SliderThumb
+          style={{
             left: `${currentPercentage}%`,
             opacity: disabled ? 0.5 : 1,
             cursor: disabled ? 'not-allowed' : 'pointer'
@@ -271,7 +275,7 @@ const CustomSlider = ({
             </ValueDisplay>
           )}
         </SliderThumb>
-        
+
         <RulerContainer>
           {rulerMarks.map((mark, index) => (
             <React.Fragment key={index}>
@@ -287,15 +291,14 @@ const CustomSlider = ({
   );
 };
 
-// Demo component
-const SliderDemo = () => {
-  const [value1, setValue1] = useState(250000);
-  const [value2, setValue2] = useState(5000);
-  
+const SliderDemo: React.FC = () => {
+  const [value1, setValue1] = useState<number>(250000);
+  const [value2, setValue2] = useState<number>(5000);
+
   return (
     <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
       <h2>Custom Slider Component Demo</h2>
-      
+
       <div style={{ marginBottom: '60px' }}>
         <h3>Large Value Slider (0 - 1M, step: 500)</h3>
         <p>Current value: {value1.toLocaleString()}</p>
@@ -308,7 +311,7 @@ const SliderDemo = () => {
           onChange={setValue1}
         />
       </div>
-      
+
       <div style={{ marginBottom: '60px' }}>
         <h3>Small Value Slider (0 - 10K, step: 100)</h3>
         <p>Current value: {value2.toLocaleString()}</p>
@@ -320,10 +323,10 @@ const SliderDemo = () => {
           value={value2}
           onChange={setValue2}
           formatValue={(val) => `$${val.toLocaleString()}`}
-          formatRulerLabel={(val) => val >= 1000 ? `$${val/1000}K` : `$${val}`}
+          formatRulerLabel={(val) => val >= 1000 ? `$${val / 1000}K` : `$${val}`}
         />
       </div>
-      
+
       <div style={{ marginBottom: '60px' }}>
         <h3>Disabled Slider</h3>
         <CustomSlider
