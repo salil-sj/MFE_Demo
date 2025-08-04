@@ -6,116 +6,136 @@ interface SliderProps {
   maxValue: number;
   value: number;
   setValue: (value: number) => void;
-  onValueSet?: (value: number) => void; // Called when slider is released
+  onValueSet?: (value: number) => void;
 }
 
 const SliderWrapper = styled.div`
   width: 600px;
   margin: 20px 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 `;
 
 const TopSection = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 `;
 
 const LogoSection = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 `;
 
 const LogoPlaceholder = styled.div`
-  width: 60px;
-  height: 40px;
-  border: 2px solid #333;
-  background-color: #f8f9fa;
+  width: 70px;
+  height: 45px;
+  border: 2px solid #2c3e50;
+  background-color: #ecf0f1;
   position: relative;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   
   &::after {
     content: '↓';
     position: absolute;
-    top: -8px;
+    top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
+    color: #2c3e50;
   }
 `;
 
 const LogoText = styled.span`
-  font-family: Arial, sans-serif;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
+  color: #2c3e50;
 `;
 
 const PurchaseText = styled.span`
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  margin-left: 20px;
+  font-size: 15px;
+  color: #34495e;
+  margin-left: 10px;
 `;
 
 const AmountBox = styled.input`
-  width: 120px;
-  height: 35px;
-  border: 2px solid #333;
+  width: 140px;
+  height: 40px;
+  border: 2px solid #bdc3c7;
   background-color: white;
-  padding: 5px 10px;
-  font-family: Arial, sans-serif;
+  padding: 8px 12px;
   font-size: 14px;
-  text-align: left;
+  font-weight: 500;
+  text-align: right;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
   
   &:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+  
+  &::placeholder {
+    color: #95a5a6;
+    font-weight: normal;
   }
 `;
 
 const SliderContainer = styled.div`
   width: 100%;
-  height: 80px;
-  background-color: #f8f9fa;
-  border: 2px solid #333;
+  height: 90px;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ecf0f1 100%);
+  border: 2px solid #bdc3c7;
   position: relative;
   overflow: hidden;
   user-select: none;
   cursor: grab;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
   
   &:active {
     cursor: grabbing;
+  }
+  
+  &:hover {
+    border-color: #95a5a6;
   }
 `;
 
 const DownArrow = styled.div`
   position: absolute;
-  top: -1px;
+  top: -2px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 12px solid transparent;
-  border-right: 12px solid transparent;
-  border-top: 16px solid #333;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 18px solid #e74c3c;
   z-index: 10;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
 `;
 
 const ScaleContainer = styled.div<{ offset: number }>`
   position: absolute;
-  top: 16px;
+  top: 18px;
   left: 0;
-  height: calc(100% - 16px);
+  height: calc(100% - 18px);
   transform: translateX(${props => props.offset}px);
   display: flex;
   align-items: flex-start;
 `;
 
-const ScaleLine = styled.div<{ height: number; isBig?: boolean }>`
-  width: 2px;
+const ScaleLine = styled.div<{ height: number; lineType: 'big' | 'medium' | 'small' }>`
+  width: ${props => props.lineType === 'big' ? '3px' : props.lineType === 'medium' ? '2px' : '1px'};
   height: ${props => props.height}px;
-  background-color: #333;
-  margin-right: 98px;
+  background-color: ${props => props.lineType === 'big' ? '#2c3e50' : props.lineType === 'medium' ? '#34495e' : '#7f8c8d'};
+  margin-right: ${props => 50 - (props.lineType === 'big' ? 1.5 : props.lineType === 'medium' ? 1 : 0.5)}px;
   position: relative;
   
   &:last-child {
@@ -125,13 +145,14 @@ const ScaleLine = styled.div<{ height: number; isBig?: boolean }>`
 
 const ScaleLabel = styled.div`
   position: absolute;
-  top: 25px;
+  top: 35px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 12px;
-  font-weight: 500;
-  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
   white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
 `;
 
 const PrecisionSlider: React.FC<SliderProps> = ({ 
@@ -147,52 +168,62 @@ const PrecisionSlider: React.FC<SliderProps> = ({
   const [initialOffset, setInitialOffset] = useState(0);
   const [inputValue, setInputValue] = useState(value.toString());
 
-  // Update input value when slider value changes
   useEffect(() => {
     setInputValue(value.toLocaleString());
   }, [value]);
 
-  // Calculate the offset based on current value
   const calculateOffset = useCallback((val: number) => {
     const containerWidth = 600;
     const centerX = containerWidth / 2;
-    const pixelsPerUnit = 100 / 500;
+    const pixelsPerUnit = 50 / 500; // 50px per 500 units
     const valueOffset = (val - minValue) * pixelsPerUnit;
     return centerX - valueOffset;
   }, [minValue]);
 
-  // Calculate value from offset
   const calculateValueFromOffset = useCallback((offset: number) => {
     const containerWidth = 600;
     const centerX = containerWidth / 2;
-    const pixelsPerUnit = 100 / 500;
+    const pixelsPerUnit = 50 / 500; // 50px per 500 units
     const valueOffset = (centerX - offset) / pixelsPerUnit;
     const newValue = minValue + valueOffset;
     
-    // Snap to nearest 500 increment
     const snappedValue = Math.round(newValue / 500) * 500;
     return Math.max(minValue, Math.min(maxValue, snappedValue));
   }, [minValue, maxValue]);
 
   const offset = calculateOffset(value);
 
-  // Generate scale marks
   const generateScaleMarks = () => {
     const marks = [];
     const totalRange = maxValue - minValue;
-    const steps = totalRange / 500;
+    const totalSteps = totalRange / 500; // Each step is 500 units
     
-    for (let i = 0; i <= steps; i++) {
+    for (let i = 0; i <= totalSteps; i++) {
       const currentValue = minValue + (i * 500);
-      const isBigLine = i % 2 === 0;
+      let lineType: 'big' | 'medium' | 'small';
+      let height: number;
+      
+      // Pattern: Big line every 5000 units (every 10 steps of 500)
+      // Medium line every 2500 units (every 5 steps of 500)
+      // Small lines for everything else
+      if (i % 10 === 0) {
+        lineType = 'big';
+        height = 40;
+      } else if (i % 5 === 0) {
+        lineType = 'medium';
+        height = 25;
+      } else {
+        lineType = 'small';
+        height = 15;
+      }
       
       marks.push(
         <ScaleLine 
           key={i} 
-          height={isBigLine ? 30 : 15}
-          isBig={isBigLine}
+          height={height}
+          lineType={lineType}
         >
-          {isBigLine && (
+          {lineType === 'big' && (
             <ScaleLabel>
               {currentValue.toLocaleString()}
             </ScaleLabel>
@@ -222,7 +253,6 @@ const PrecisionSlider: React.FC<SliderProps> = ({
   const handleMouseUp = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
-      // Call the callback function when slider is released
       if (onValueSet) {
         onValueSet(value);
       }
@@ -282,7 +312,7 @@ const PrecisionSlider: React.FC<SliderProps> = ({
           value={inputValue}
           onChange={handleInputChange}
           onKeyPress={handleInputKeyPress}
-          placeholder="CMF"
+          placeholder="CHF"
         />
       </TopSection>
       
@@ -303,17 +333,14 @@ const PrecisionSlider: React.FC<SliderProps> = ({
 // Demo component
 const SliderDemo: React.FC = () => {
   const [value1, setValue1] = useState(0);
-  const [value2, setValue2] = useState(20000);
+  const [value2, setValue2] = useState(25000);
 
   const handleValueSet = (value: number) => {
     console.log('Slider value set to:', value);
-    // This function is called when the slider is released
   };
 
   return (
-    <div style={{ padding: '40px', backgroundColor: '#fff' }}>
-      <h3 style={{ marginBottom: '20px', fontFamily: 'Arial, sans-serif' }}>Initially:</h3>
-      
+    <div style={{ padding: '40px', backgroundColor: '#ffffff', minHeight: '100vh' }}>      
       <PrecisionSlider 
         minValue={0}
         maxValue={10000}
@@ -322,22 +349,24 @@ const SliderDemo: React.FC = () => {
         onValueSet={handleValueSet}
       />
 
-      <h3 style={{ marginBottom: '20px', marginTop: '40px', fontFamily: 'Arial, sans-serif' }}>Logo Placeholder</h3>
-      
-      <PrecisionSlider 
-        minValue={20000}
-        maxValue={30000}
-        value={value2}
-        setValue={setValue2}
-        onValueSet={handleValueSet}
-      />
+      <div style={{ marginTop: '40px' }}>
+        <PrecisionSlider 
+          minValue={20000}
+          maxValue={30000}
+          value={value2}
+          setValue={setValue2}
+          onValueSet={handleValueSet}
+        />
+      </div>
 
-      <div style={{ marginTop: '30px', fontSize: '14px', color: '#666', fontFamily: 'Arial, sans-serif' }}>
-        <p>• Drag to slide the scale left/right</p>
-        <p>• Use mouse wheel for precise control</p>
-        <p>• Type amount in input box and press Enter to set value</p>
-        <p>• Values snap to 500-unit increments</p>
-        <p>• onValueSet callback is triggered when slider is released</p>
+      <div style={{ marginTop: '30px', fontSize: '14px', color: '#7f8c8d', fontFamily: 'Segoe UI, sans-serif' }}>
+        <p><strong>Features:</strong></p>
+        <p>• Big lines every 5000 units (0, 5000, 10000...)</p>
+        <p>• Medium lines every 2500 units</p>
+        <p>• Small lines every 500 units</p>
+        <p>• Drag to slide smoothly</p>
+        <p>• Type in input box and press Enter</p>
+        <p>• Mouse wheel for precise control</p>
       </div>
     </div>
   );
