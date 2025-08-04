@@ -218,21 +218,22 @@ setInputValue(snappedValue.toString());
     const startValue = minValue ;
     const endValue = maxValue + 10000;
 
-    for (let tickValue = startValue; tickValue <= endValue; tickValue += STEP) {
-      const isMajorTick = tickValue % MAJOR_TICK_INTERVAL === 0;
-      const isMediumTick = tickValue % 2500 === 0 && !isMajorTick;
+   for (let tickValue = minValue; tickValue <= maxValue; tickValue += STEP) {
+  const isMajorTick = tickValue % MAJOR_TICK_INTERVAL === 0;
+  const isMediumTick = tickValue % 2500 === 0 && !isMajorTick;
 
-      const height = isMajorTick ? 60 : isMediumTick ? 40 : 25;
-      const position = tickValue * PIXELS_PER_UNIT;
+  const height = isMajorTick ? 60 : isMediumTick ? 40 : 25;
+  const position = tickValue * PIXELS_PER_UNIT;
 
-      ticks.push(
-        <TickWrapper key={tickValue} style={{ position: 'absolute', left: `${position}px` }}>
-          <TickMark height={height} />
-          {isMajorTick && tickValue >= minValue && tickValue <= maxValue && (
-            <TickLabel>{tickValue.toLocaleString()}</TickLabel>
-          )}
-        </TickWrapper>
-      );
+  ticks.push(
+    <TickWrapper key={tickValue} style={{ position: 'absolute', left: `${position}px` }}>
+      <TickMark height={height} />
+      {isMajorTick && (
+        <TickLabel>{tickValue.toLocaleString()}</TickLabel>
+      )}
+    </TickWrapper>
+  );
+
     }
 
     
