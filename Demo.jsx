@@ -129,14 +129,16 @@ const ScaleContainer = styled.div<{ offset: number }>`
   transform: translateX(${props => props.offset}px);
   display: flex;
   align-items: flex-start;
+  will-change: transform;
 `;
 
 const ScaleLine = styled.div<{ height: number; lineType: 'big' | 'medium' | 'small' }>`
   width: ${props => props.lineType === 'big' ? '2px' : props.lineType === 'medium' ? '1.5px' : '1px'};
   height: ${props => props.height}px;
   background-color: ${props => props.lineType === 'big' ? '#2c3e50' : props.lineType === 'medium' ? '#34495e' : '#7f8c8d'};
-  margin-right: ${props => 20 - (props.lineType === 'big' ? 1 : props.lineType === 'medium' ? 0.75 : 0.5)}px;
+  margin-right: 19px;
   position: relative;
+  flex-shrink: 0;
   
   &:last-child {
     margin-right: 0;
@@ -173,21 +175,28 @@ const PrecisionSlider: React.FC<SliderProps> = ({
   }, [value]);
 
   const calculateOffset = useCallback((val: number) => {
-    const containerWidth = 400;
-    const centerX = containerWidth / 2;
-    const pixelsPerUnit = 20 / 500; // 20px per 500 units (matches new line spacing)
-    const valueOffset = (val - minValue) * pixelsPerUnit;
-    return centerX - valueOffset;
-  }, [minValue]);
+    // Each line is exactly 20px apart (1px line + 19px margin)
+    // Arrow is at center (200px from left)
+    // Calculate how many 500-unit steps the value is from a reference point
+    const referenceValue = 0; // Use 0 as absolute reference
+    const stepsFromReference = (val - referenceValue) / 500;
+    const pixelsFromReference = stepsFromReference * 20;
+    
+    // Position the reference point (0) at center, then offset by the value
+    const referenceOffset = 200; // Center position for value 0
+    return referenceOffset - pixelsFromReference;
+  }, []);
 
   const calculateValueFromOffset = useCallback((offset: number) => {
-    const containerWidth = 400;
-    const centerX = containerWidth / 2;
-    const pixelsPerUnit = 20 / 500; // 20px per 500 units (matches new line spacing)
-    const valueOffset = (centerX - offset) / pixelsPerUnit;
-    const newValue = minValue + valueOffset;
+    // Reverse calculation
+    const referenceValue = 0;
+    const referenceOffset = 200;
+    const pixelsFromReference = referenceOffset - offset;
+    const stepsFromReference = pixelsFromReference / 20;
+    const calculatedValue = referenceValue + (stepsFromReference * 500);
     
-    const snappedValue = Math.round(newValue / 500) * 500;
+    // Snap to nearest 500 increment
+    const snappedValue = Math.round(calculatedValue / 500) * 500;
     return Math.max(minValue, Math.min(maxValue, snappedValue));
   }, [minValue, maxValue]);
 
@@ -195,26 +204,22 @@ const PrecisionSlider: React.FC<SliderProps> = ({
 
   const generateScaleMarks = () => {
     const marks = [];
-    const totalRange = maxValue - minValue;
-    const totalSteps = totalRange / 500; // Each step is 500 units
     
-    // Generate extra marks for smooth scrolling beyond visible area
-    const extraSteps = 10; // Add extra steps on each side
-    const startStep = -extraSteps;
-    const endStep = totalSteps + extraSteps;
+    // Generate a large range of marks to ensure smooth scrolling
+    const extraRange = 50000; // Large buffer on each side
+    const startValue = minValue - extraRange;
+    const endValue = maxValue + extraRange;
     
-    for (let i = startStep; i <= endStep; i++) {
-      const currentValue = minValue + (i * 500);
+    // Generate marks every 500 units
+    for (let currentValue = startValue; currentValue <= endValue; currentValue += 500) {
       let lineType: 'big' | 'medium' | 'small';
       let height: number;
       
-      // Pattern: Big line every 5000 units (every 10 steps of 500)
-      // Medium line every 2500 units (every 5 steps of 500)
-      // Small lines for everything else
-      if (i % 10 === 0) {
+      // Pattern based on the value itself (not relative to minValue)
+      if (currentValue % 5000 === 0) {
         lineType = 'big';
         height = 25;
-      } else if (i % 5 === 0) {
+      } else if (currentValue % 2500 === 0) {
         lineType = 'medium';
         height = 18;
       } else {
@@ -224,7 +229,7 @@ const PrecisionSlider: React.FC<SliderProps> = ({
       
       marks.push(
         <ScaleLine 
-          key={i} 
+          key={currentValue} 
           height={height}
           lineType={lineType}
         >
