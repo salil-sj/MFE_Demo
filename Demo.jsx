@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import styled from 'styled-components';
 
 interface SliderProps {
@@ -214,7 +214,7 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
 
   const renderTicks = () => {
     const ticks = [];
-    const startValue = minValue - 10000;
+    const startValue = minValue ;
     const endValue = maxValue + 10000;
 
     for (let tickValue = startValue; tickValue <= endValue; tickValue += STEP) {
@@ -234,10 +234,25 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
       );
     }
 
+    
+
     return ticks;
   };
 
-  const currentOffset = valueToOffset(value);
+  const [currentOffset, setCurrentOffset] = useState(0);
+
+//   useEffect(() => {
+//   const container = containerRef.current;
+//   if (container) {
+//     const offset = valueToOffset(value);
+//     container.scrollLeft = -offset;
+//   }
+// }, [containerRef.current]); //
+
+useLayoutEffect(() => {
+  const offset = valueToOffset(value);
+  setCurrentOffset(offset);
+}, [value, containerRef.current]);
 
   return (
     <Container>
