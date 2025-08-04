@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
 interface SliderProps {
@@ -38,6 +38,7 @@ const Tooltip = styled.div<{ left: number }>`
   border-radius: 4px;
   font-size: 0.75rem;
   white-space: nowrap;
+  pointer-events: none;
 `;
 
 const StyledInput = styled.input<{ value: number; max: number }>`
@@ -46,13 +47,8 @@ const StyledInput = styled.input<{ value: number; max: number }>`
   appearance: none;
   height: 8px;
   border-radius: 10px;
-  background: linear-gradient(
-    to right,
-    #6c7347 0%,
-    #6c7347 ${({ value, max }) => (value / max) * 100}%,
-    #ddd ${({ value, max }) => (value / max) * 100}%,
-    #ddd 100%
-  );
+  background: transparent;
+  border: 1px solid black;
 
   &::-webkit-slider-thumb {
     appearance: none;
@@ -79,11 +75,15 @@ const StyledInput = styled.input<{ value: number; max: number }>`
   &::-webkit-slider-runnable-track {
     height: 8px;
     border-radius: 10px;
+    background: transparent;
+    border: 1px solid black;
   }
 
   &::-moz-range-track {
     height: 8px;
     border-radius: 10px;
+    background: transparent;
+    border: 1px solid black;
   }
 `;
 
@@ -119,10 +119,11 @@ export const CustomSlider: React.FC<SliderProps> = ({
   maxValue,
   sliderSteps,
 }) => {
-  const rulerSteps = useMemo(() => generateRulerSteps(maxValue), [maxValue]);
+  const [isDragging, setIsDragging] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
 
-  // calculate position of tooltip
+  const rulerSteps = useMemo(() => generateRulerSteps(maxValue), [maxValue]);
+
   const getTooltipLeft = () => {
     if (!trackRef.current) return 0;
     const trackWidth = trackRef.current.offsetWidth;
@@ -138,7 +139,7 @@ export const CustomSlider: React.FC<SliderProps> = ({
         </Label>
       )}
       <TrackWrapper ref={trackRef}>
-        <Tooltip left={getTooltipLeft()}>{value}</Tooltip>
+        {isDragging && <Tooltip left={getTooltipLeft()}>{value}</Tooltip>}
         <StyledInput
           type="range"
           id={id}
@@ -146,6 +147,10 @@ export const CustomSlider: React.FC<SliderProps> = ({
           max={maxValue}
           step={sliderSteps}
           value={value}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={() => setIsDragging(false)}
+          onTouchStart={() => setIsDragging(true)}
+          onTouchEnd={() => setIsDragging(false)}
           onChange={(e) => onChange(Number(e.target.value))}
           value={value}
           max={maxValue}
