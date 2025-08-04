@@ -186,8 +186,9 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
     const newValue = offsetToValue(newOffset);
 
     const clampedValue = Math.max(minValue, Math.min(maxValue, newValue));
-    setValue(Math.round(clampedValue));
-    setInputValue(Math.round(clampedValue).toString());
+    const snappedValue = Math.round(clampedValue / STEP) * STEP;
+setValue(snappedValue);
+setInputValue(snappedValue.toString());
   }, [isDragging, minValue, maxValue, setValue]);
 
   const handleMouseUp = useCallback(() => {
