@@ -1,121 +1,118 @@
-""import React, { useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+// CustomSlider.tsx
 
-interface RulerStep {
-  value: number;
-  label: string;
-}
+import React, { useMemo } from "react";
+import styled from "styled-components";
 
-interface CustomSliderProps {
+interface SliderProps {
   id?: string;
   label?: string;
-  values?: number[];
-  minValue?: number;
-  maxValue?: number;
-  rulerSteps?: number;
-  sliderStep?: number;
+  value: number;
+  onChange: (value: number) => void;
+  minValue: number;
+  maxValue: number;
+  sliderSteps: number;
 }
 
-const Wrapper = styled.div`
-  margin: 1rem 0;
-`;
-
-const SliderContainer = styled.div`
-  position: relative;
-`;
-
-const StyledSlider = styled.input`
+const SliderWrapper = styled.div`
   width: 100%;
+  padding: 1rem;
+`;
+
+const StyledInput = styled.input`
+  width: 100%;
+  margin: 10px 0;
+  appearance: none;
+  height: 8px;
+  border-radius: 5px;
+  background: #ddd;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border: 3px solid #6c7347;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: white;
+    border: 3px solid #6c7347;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  &::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(
+      to right,
+      #6c7347 0%,
+      #6c7347 ${({ value, max }) => (value / max) * 100}%,
+      #ddd ${({ value, max }) => (value / max) * 100}%,
+      #ddd 100%
+    );
+  }
 `;
 
 const Ruler = styled.div`
   display: flex;
   justify-content: space-between;
-  position: absolute;
-  width: 100%;
-  top: 20px;
+  font-size: 0.7rem;
+  color: #444;
+  overflow: hidden;
 `;
 
-const RulerStepLabel = styled.span`
-  font-size: 12px;
-  white-space: nowrap;
-`;
-
-const ValueLabel = styled.div`
-  margin-top: 0.5rem;
-  text-align: center;
-  font-weight: bold;
-`;
-
-const formatLabel = (value: number): string => {
-  if (value >= 1_00_00_000) return `${value / 1_00_00_000}cr`;
-  if (value >= 1_00_000) return `${value / 1_00_000}L`;
+function formatRulerValue(value: number): string {
+  if (value >= 10000000) return `${value / 10000000}Cr`;
+  if (value >= 100000) return `${value / 100000}L`;
   if (value >= 1000) return `${value / 1000}k`;
   return `${value}`;
-};
+}
 
-const generateRulerSteps = (min: number, max: number, count: number): RulerStep[] => {
-  if (count <= 1) return [{ value: max, label: formatLabel(max) }];
+function generateRulerSteps(maxValue: number): number[] {
+  const stepCount = 5;
+  const step = Math.ceil(maxValue / stepCount);
+  const roundedStep = Math.pow(10, Math.floor(Math.log10(step)));
+  const finalStep = Math.ceil(step / roundedStep) * roundedStep;
+  return Array.from({ length: stepCount }, (_, i) => finalStep * (i + 1));
+}
 
-  const stepSize = (max - min) / (count - 1);
-  const steps: RulerStep[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const val = Math.round(min + stepSize * i);
-    steps.push({ value: val, label: formatLabel(val) });
-  }
-
-  return steps;
-};
-
-const CustomSlider: React.FC<CustomSliderProps> = ({
+export const CustomSlider: React.FC<SliderProps> = ({
   id,
   label,
-  values = [],
-  minValue = 0,
-  maxValue = 100,
-  rulerSteps = 5,
-  sliderStep = 1,
+  value,
+  onChange,
+  minValue,
+  maxValue,
+  sliderSteps,
 }) => {
-  const [value, setValue] = useState<number>(values[0] ?? minValue);
-  const sliderRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (values.length > 0) {
-      setValue(values[0]);
-    }
-  }, [values]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseInt(e.target.value);
-    setValue(newValue);
-  };
-
-  const ruler = generateRulerSteps(minValue, maxValue, rulerSteps);
+  const rulerSteps = useMemo(() => generateRulerSteps(maxValue), [maxValue]);
 
   return (
-    <Wrapper id={id}>
-      {label && <label htmlFor={id}>{label}</label>}
-      <SliderContainer>
-        <StyledSlider
-          ref={sliderRef}
-          type="range"
-          id={id}
-          min={minValue}
-          max={maxValue}
-          step={sliderStep}
-          value={value}
-          onChange={handleChange}
-        />
-        <Ruler>
-          {ruler.map((step, index) => (
-            <RulerStepLabel key={index}>{step.label}</RulerStepLabel>
-          ))}
-        </Ruler>
-      </SliderContainer>
-      <ValueLabel>{value}</ValueLabel>
-    </Wrapper>
+    <SliderWrapper>
+      {label && (
+        <label htmlFor={id}>
+          <strong>{label}</strong> {value}
+        </label>
+      )}
+      <StyledInput
+        type="range"
+        id={id}
+        min={minValue}
+        max={maxValue}
+        step={sliderSteps}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+      <Ruler>
+        <span>0</span>
+        {rulerSteps.map((val, i) => (
+          <span key={i}>{formatRulerValue(val)}</span>
+        ))}
+      </Ruler>
+    </SliderWrapper>
   );
 };
-
-export default CustomSlider;
