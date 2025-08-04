@@ -56,17 +56,18 @@ const PurchaseAmount = styled.div`
 
 const AmountInput = styled.input`
   width: 150px;
-  height: 15px;
+  //height: 15px;
   border-radius: 6px;
   padding: 5px 10px;
-  font-size: 16px;
+  font-size: 14px; /* was 16px */
+  height: 14px;
   text-align: center;
   background: white;
 `;
 
 const SliderContainer = styled.div`
-  width: 100%;
-  height: 80px;
+   width: 100%;
+  height: 60px; /* was 80px */
   position: relative;
   overflow: hidden;
   background: white;
@@ -108,19 +109,19 @@ const TickLabel = styled.div`
   position: absolute;
   top: 100%;
   transform: translateX(-50%);
-  font-size: 12px;
+  font-size: 10px;
   color: #000000;
 
 `;
 
 const Pointer = styled.div`
   position: absolute;
-  left: 50%;
   top: 0;
+  left: calc(50% + 0.5px); /* 👈 nudges the line forward */
   transform: translateX(-50%);
-  width: 3px;
+  width: 2px;
   height: 100%;
-  background-color: #000000;
+  background-color: #c60303;
   z-index: 10;
   pointer-events: none;
 `;
@@ -140,7 +141,7 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
 
   const STEP = 500;
   const MAJOR_TICK_INTERVAL = 5000;
-  const PIXELS_PER_UNIT = 0.04; // Adjust for spacing
+  const PIXELS_PER_UNIT = 0.02; // Adjust for spacing
   const TICK_SPACING = 20;
 
   const valueToOffset = (val: number) => {
@@ -222,8 +223,9 @@ setInputValue(snappedValue.toString());
   const isMajorTick = tickValue % MAJOR_TICK_INTERVAL === 0;
   const isMediumTick = tickValue % 2500 === 0 && !isMajorTick;
 
-  const height = isMajorTick ? 60 : isMediumTick ? 40 : 25;
-  const position = tickValue * PIXELS_PER_UNIT;
+  const height = isMajorTick ? 40 : isMediumTick ? 25 : 15; // previously 60 / 40 / 25
+
+  const position = Math.round(tickValue * PIXELS_PER_UNIT);
 
   ticks.push(
     <TickWrapper key={tickValue} style={{ position: 'absolute', left: `${position}px` }}>
