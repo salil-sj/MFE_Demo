@@ -1,6 +1,4 @@
-// CustomSlider.tsx
-
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import styled from "styled-components";
 
 interface SliderProps {
@@ -18,27 +16,60 @@ const SliderWrapper = styled.div`
   padding: 1rem;
 `;
 
-const StyledInput = styled.input`
+const Label = styled.label`
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+`;
+
+const TrackWrapper = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const Tooltip = styled.div<{ left: number }>`
+  position: absolute;
+  bottom: 25px;
+  left: ${({ left }) => left}px;
+  transform: translateX(-50%);
+  background: #444;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+`;
+
+const StyledInput = styled.input<{ value: number; max: number }>`
   width: 100%;
   margin: 10px 0;
   appearance: none;
   height: 8px;
-  border-radius: 5px;
-  background: #ddd;
+  border-radius: 10px;
+  background: linear-gradient(
+    to right,
+    #6c7347 0%,
+    #6c7347 ${({ value, max }) => (value / max) * 100}%,
+    #ddd ${({ value, max }) => (value / max) * 100}%,
+    #ddd 100%
+  );
 
   &::-webkit-slider-thumb {
     appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     background: white;
     border: 3px solid #6c7347;
     border-radius: 50%;
+    margin-top: -6px; /* Align center vertically */
     cursor: pointer;
+    position: relative;
+    z-index: 10;
   }
 
   &::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     background: white;
     border: 3px solid #6c7347;
     border-radius: 50%;
@@ -47,13 +78,12 @@ const StyledInput = styled.input`
 
   &::-webkit-slider-runnable-track {
     height: 8px;
-    background: linear-gradient(
-      to right,
-      #6c7347 0%,
-      #6c7347 ${({ value, max }) => (value / max) * 100}%,
-      #ddd ${({ value, max }) => (value / max) * 100}%,
-      #ddd 100%
-    );
+    border-radius: 10px;
+  }
+
+  &::-moz-range-track {
+    height: 8px;
+    border-radius: 10px;
   }
 `;
 
@@ -90,23 +120,37 @@ export const CustomSlider: React.FC<SliderProps> = ({
   sliderSteps,
 }) => {
   const rulerSteps = useMemo(() => generateRulerSteps(maxValue), [maxValue]);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  // calculate position of tooltip
+  const getTooltipLeft = () => {
+    if (!trackRef.current) return 0;
+    const trackWidth = trackRef.current.offsetWidth;
+    const percentage = (value - minValue) / (maxValue - minValue);
+    return percentage * trackWidth;
+  };
 
   return (
     <SliderWrapper>
       {label && (
-        <label htmlFor={id}>
-          <strong>{label}</strong> {value}
-        </label>
+        <Label htmlFor={id}>
+          {label} {value}
+        </Label>
       )}
-      <StyledInput
-        type="range"
-        id={id}
-        min={minValue}
-        max={maxValue}
-        step={sliderSteps}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
+      <TrackWrapper ref={trackRef}>
+        <Tooltip left={getTooltipLeft()}>{value}</Tooltip>
+        <StyledInput
+          type="range"
+          id={id}
+          min={minValue}
+          max={maxValue}
+          step={sliderSteps}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          value={value}
+          max={maxValue}
+        />
+      </TrackWrapper>
       <Ruler>
         <span>0</span>
         {rulerSteps.map((val, i) => (
