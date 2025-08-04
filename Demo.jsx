@@ -135,7 +135,7 @@ const ScaleLine = styled.div<{ height: number; lineType: 'big' | 'medium' | 'sma
   width: ${props => props.lineType === 'big' ? '2px' : props.lineType === 'medium' ? '1.5px' : '1px'};
   height: ${props => props.height}px;
   background-color: ${props => props.lineType === 'big' ? '#2c3e50' : props.lineType === 'medium' ? '#34495e' : '#7f8c8d'};
-  margin-right: ${props => 33 - (props.lineType === 'big' ? 1 : props.lineType === 'medium' ? 0.75 : 0.5)}px;
+  margin-right: ${props => 20 - (props.lineType === 'big' ? 1 : props.lineType === 'medium' ? 0.75 : 0.5)}px;
   position: relative;
   
   &:last-child {
@@ -148,7 +148,7 @@ const ScaleLabel = styled.div`
   top: 22px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   color: #2c3e50;
   white-space: nowrap;
@@ -173,17 +173,17 @@ const PrecisionSlider: React.FC<SliderProps> = ({
   }, [value]);
 
   const calculateOffset = useCallback((val: number) => {
-    const containerWidth = 400; // Updated container width
+    const containerWidth = 400;
     const centerX = containerWidth / 2;
-    const pixelsPerUnit = 33 / 500; // 33px per 500 units (adjusted for smaller size)
+    const pixelsPerUnit = 20 / 500; // 20px per 500 units (matches new line spacing)
     const valueOffset = (val - minValue) * pixelsPerUnit;
     return centerX - valueOffset;
   }, [minValue]);
 
   const calculateValueFromOffset = useCallback((offset: number) => {
-    const containerWidth = 400; // Updated container width
+    const containerWidth = 400;
     const centerX = containerWidth / 2;
-    const pixelsPerUnit = 33 / 500; // 33px per 500 units (adjusted for smaller size)
+    const pixelsPerUnit = 20 / 500; // 20px per 500 units (matches new line spacing)
     const valueOffset = (centerX - offset) / pixelsPerUnit;
     const newValue = minValue + valueOffset;
     
@@ -198,7 +198,12 @@ const PrecisionSlider: React.FC<SliderProps> = ({
     const totalRange = maxValue - minValue;
     const totalSteps = totalRange / 500; // Each step is 500 units
     
-    for (let i = 0; i <= totalSteps; i++) {
+    // Generate extra marks for smooth scrolling beyond visible area
+    const extraSteps = 10; // Add extra steps on each side
+    const startStep = -extraSteps;
+    const endStep = totalSteps + extraSteps;
+    
+    for (let i = startStep; i <= endStep; i++) {
       const currentValue = minValue + (i * 500);
       let lineType: 'big' | 'medium' | 'small';
       let height: number;
@@ -223,7 +228,7 @@ const PrecisionSlider: React.FC<SliderProps> = ({
           height={height}
           lineType={lineType}
         >
-          {lineType === 'big' && (
+          {lineType === 'big' && currentValue >= minValue && currentValue <= maxValue && (
             <ScaleLabel>
               {currentValue.toLocaleString()}
             </ScaleLabel>
