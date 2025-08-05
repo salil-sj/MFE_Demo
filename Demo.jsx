@@ -10,14 +10,13 @@ interface SliderProps {
 }
 
 const Container = styled.div`
-
- flex: 1;
-  min-width: 300px;
+  flex: 1;
+  min-width: 260px;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 20px;
-  border-radius: 8px;
-  margin: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 5px;
   display: flex;
   flex-direction: column;
 `;
@@ -51,33 +50,30 @@ const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px; // reduced
   position: relative;
 `;
 
 const PurchaseAmount = styled.div`
-  font-size: 18px;
-  margin-left: 0px;
+  font-size: 14px; // reduced
 `;
 
 const AmountInput = styled.input`
   width: 100%;
-  max-width: 150px;
-  font-size: 14px;
-  padding: 6px 10px;
+  max-width: 120px;
+  font-size: 12px; // reduced
+  padding: 4px 6px;
   text-align: center;
-  border-radius: 6px;
-  background: white;
-  box-sizing: border-box;
+  border-radius: 4px;
 `;
 
 const SliderContainer = styled.div`
   width: 100%;
-  height: 60px;
+  height: 40px; // reduced from 60px
   position: relative;
   overflow: hidden;
   background: white;
-  border: 2px solid #333;
+  border: 1px solid #333;
   cursor: grab;
   background-color: #d6d3d32c;
 
@@ -105,20 +101,19 @@ const TickWrapper = styled.div`
 `;
 
 const TickMark = styled.div<{ height: number }>`
-  width: 2px;
+  width: 1.5px;
   height: ${props => props.height}px;
   background-color: #333;
   flex-shrink: 0;
 `;
-
 const TickLabel = styled.div`
   position: absolute;
   top: 100%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: 8px; // reduced
   color: #000000;
-
 `;
+
 
 const Pointer = styled.div`
   position: absolute;
@@ -141,9 +136,9 @@ const ArrowPointer = styled.div`
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 10px solid #000000;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #000000; // smaller arrow
   z-index: 10;
   pointer-events: none;
 `;
@@ -242,7 +237,7 @@ setInputValue(finalValue.toString());
     const isMajorTick = tickValue % MAJOR_TICK_INTERVAL === 0;
     const isMediumTick = tickValue % 2500 === 0 && !isMajorTick;
 
-    const height = isMajorTick ? 40 : isMediumTick ? 25 : 15;
+    const height = isMajorTick ? 30 : isMediumTick ? 20 : 10;
     const position = Math.round((tickValue - minValue) * PIXELS_PER_UNIT);
 
     console.log("Tick at:", tickValue); // ✅ Add this temporarily
