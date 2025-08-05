@@ -11,9 +11,15 @@ interface SliderProps {
 
 const Container = styled.div`
 
+ flex: 1;
+  min-width: 300px;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 20px;
   border-radius: 8px;
-  margin: 20px;
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
 `;
 
 const LogoPlaceholder = styled.div`
@@ -27,7 +33,7 @@ const LogoPlaceholder = styled.div`
   font-size: 12px;
   background: white;
   
-  &::after {
+  /* &::after {
     content: '';
     position: absolute;
     bottom: -10px;
@@ -38,7 +44,7 @@ const LogoPlaceholder = styled.div`
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
     border-top: 10px solid #333;
-  }
+  } */
 `;
 
 const Header = styled.div`
@@ -55,29 +61,29 @@ const PurchaseAmount = styled.div`
 `;
 
 const AmountInput = styled.input`
-  width: 150px;
-  //height: 15px;
-  border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 14px; /* was 16px */
-  height: 14px;
+  width: 100%;
+  max-width: 150px;
+  font-size: 14px;
+  padding: 6px 10px;
   text-align: center;
+  border-radius: 6px;
   background: white;
+  box-sizing: border-box;
 `;
 
 const SliderContainer = styled.div`
-   width: 100%;
-  height: 60px; /* was 80px */
+  width: 100%;
+  height: 60px;
   position: relative;
   overflow: hidden;
   background: white;
   border: 2px solid #333;
   cursor: grab;
-  
+  background-color: #d6d3d32c;
+
   &:active {
     cursor: grabbing;
   }
-    background-color: #d6d3d32c;
 `;
 
 const ScaleTrack = styled.div<{ offset: number }>`
@@ -117,11 +123,27 @@ const TickLabel = styled.div`
 const Pointer = styled.div`
   position: absolute;
   top: 0;
-  left: calc(50% + 0.5px); /* 👈 nudges the line forward */
+  left: 50%;
   transform: translateX(-50%);
-  width: 2px;
+  width: 4px; /* <- increased from 2px */
   height: 100%;
   background-color: #c60303;
+  z-index: 10;
+  pointer-events: none;
+`;
+
+const ARROW_LEFT_POSITION = 30;
+
+const ArrowPointer = styled.div`
+  position: absolute;
+  top: 0;
+  left: ${ARROW_LEFT_POSITION}px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #000000;
   z-index: 10;
   pointer-events: none;
 `;
@@ -133,6 +155,7 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
   setValue,
   onFinalChange
 }) => {
+
   const [isDragging, setIsDragging] = useState(false);
   const [inputValue, setInputValue] = useState(value.toString());
   const containerRef = useRef<HTMLDivElement>(null);
@@ -143,18 +166,15 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
   const MAJOR_TICK_INTERVAL = 5000;
   const PIXELS_PER_UNIT = 0.02; // Adjust for spacing
   const TICK_SPACING = 20;
+  const LEFT_MARGIN = 20; // margin from the left of the container
 
-  const valueToOffset = (val: number) => {
-    const containerWidth = containerRef.current?.offsetWidth || 600;
-    const centerX = containerWidth / 2;
-    return centerX - (val * PIXELS_PER_UNIT);
-  };
+const valueToOffset = (val: number) => {
+  return ARROW_LEFT_POSITION - (val - minValue) * PIXELS_PER_UNIT;
+};
 
-  const offsetToValue = (offset: number) => {
-    const containerWidth = containerRef.current?.offsetWidth || 600;
-    const centerX = containerWidth / 2;
-    return (centerX - offset) / PIXELS_PER_UNIT;
-  };
+const offsetToValue = (offset: number) => {
+  return minValue + (ARROW_LEFT_POSITION - offset) / PIXELS_PER_UNIT;
+};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleaned = e.target.value.replace(/[^0-9]/g, '');
@@ -175,7 +195,7 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     dragStartX.current = e.clientX;
-    startOffset.current = valueToOffset(value);
+   startOffset.current = valueToOffset(value);
     e.preventDefault();
   };
 
@@ -187,9 +207,10 @@ const WeighingScaleSlider: React.FC<SliderProps> = ({
     const newValue = offsetToValue(newOffset);
 
     const clampedValue = Math.max(minValue, Math.min(maxValue, newValue));
-    const snappedValue = Math.round(clampedValue / STEP) * STEP;
-setValue(snappedValue);
-setInputValue(snappedValue.toString());
+const snappedValue = Math.round(clampedValue / STEP) * STEP;
+const finalValue = Math.max(minValue, Math.min(maxValue, snappedValue));
+setValue(finalValue);
+setInputValue(finalValue.toString());
   }, [isDragging, minValue, maxValue, setValue]);
 
   const handleMouseUp = useCallback(() => {
@@ -215,32 +236,30 @@ setInputValue(snappedValue.toString());
   }, [value]);
 
   const renderTicks = () => {
-    const ticks = [];
-    const startValue = minValue ;
-    const endValue = maxValue + 10000;
-
-   for (let tickValue = minValue; tickValue <= maxValue; tickValue += STEP) {
-  const isMajorTick = tickValue % MAJOR_TICK_INTERVAL === 0;
-  const isMediumTick = tickValue % 2500 === 0 && !isMajorTick;
-
-  const height = isMajorTick ? 40 : isMediumTick ? 25 : 15; // previously 60 / 40 / 25
-
-  const position = Math.round(tickValue * PIXELS_PER_UNIT);
-
-  ticks.push(
-    <TickWrapper key={tickValue} style={{ position: 'absolute', left: `${position}px` }}>
-      <TickMark height={height} />
-      {isMajorTick && (
-        <TickLabel>{tickValue.toLocaleString()}</TickLabel>
-      )}
-    </TickWrapper>
-  );
-
-    }
-
     
+     const ticks = [];
+  for (let tickValue = minValue; tickValue <= maxValue; tickValue += STEP) {
+    const isMajorTick = tickValue % MAJOR_TICK_INTERVAL === 0;
+    const isMediumTick = tickValue % 2500 === 0 && !isMajorTick;
 
-    return ticks;
+    const height = isMajorTick ? 40 : isMediumTick ? 25 : 15;
+    const position = Math.round((tickValue - minValue) * PIXELS_PER_UNIT);
+
+    console.log("Tick at:", tickValue); // ✅ Add this temporarily
+
+    ticks.push(
+      <TickWrapper
+        key={tickValue}
+        style={{ position: 'absolute', left: `${position}px` }}
+      >
+        <TickMark height={height} />
+        {isMajorTick && <TickLabel>{tickValue.toLocaleString()}</TickLabel>}
+      </TickWrapper>
+    );
+  }
+
+  return ticks;
+   
   };
 
   const [currentOffset, setCurrentOffset] = useState(0);
@@ -256,7 +275,7 @@ setInputValue(snappedValue.toString());
 useLayoutEffect(() => {
   const offset = valueToOffset(value);
   setCurrentOffset(offset);
-}, [value, containerRef.current]);
+}, [value]);
 
   return (
     <Container>
@@ -274,7 +293,8 @@ useLayoutEffect(() => {
       </Header>
 
       <SliderContainer ref={containerRef} onMouseDown={handleMouseDown}>
-        <Pointer />
+       
+        <ArrowPointer />
         <ScaleTrack offset={currentOffset}>{renderTicks()}</ScaleTrack>
       </SliderContainer>
     </Container>
