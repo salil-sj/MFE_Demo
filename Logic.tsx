@@ -1,225 +1,108 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-// import { Slider } from 'your-internal-library';
-
-const SliderContainer = styled.div`
-  position: relative;
-  width: 100%;
-  padding: 20px 0;
-`;
-
-const WindowInfo = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #666;
-`;
-
-const CurrentValue = styled.div`
-  font-weight: bold;
-  color: #333;
-`;
-
-const WindowRange = styled.div`
-  font-size: 12px;
-  color: #888;
-`;
-
+// Props for the wrapper
 interface WindowedSliderWrapperProps {
   id: string;
+  value: number;
+  onChange: (val: number) => void;
   minValue: number;
   maxValue: number;
   windowSize: number;
   sliderSteps: number;
   rulerSteps: number;
+  shiftThreshold?: number; // e.g., 0.05 for 5%
+  debounceMs?: number;     // e.g., 200ms
+}
+
+// Internal <Slider /> component signature (assumed)
+declare const Slider: React.FC<{
+  id: string;
+  minValue: number;
+  maxValue: number;
+  sliderSteps: number;
+  rulerSteps: number;
   value: number;
   onChange: (event: { value: number }) => void;
-  windowShiftDelay?: number;
-  shiftThreshold?: number;
-}
+}>;
 
 const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   id,
+  value,
+  onChange,
   minValue,
   maxValue,
   windowSize,
   sliderSteps,
   rulerSteps,
-  value,
-  onChange,
-  windowShiftDelay = 500,
-  shiftThreshold = 0.95,
+  shiftThreshold = 0.05,
+  debounceMs = 200
 }) => {
-  // Helpers
-  const getWindowForValue = useCallback(
-    (val: number): number => Math.floor((val - minValue) / windowSize),
-    [minValue, windowSize]
-  );
-
   const maxWindow = Math.floor((maxValue - minValue) / windowSize);
+  const [currentWindow, setCurrentWindow] = useState(Math.floor((value - minValue) / windowSize));
+  const [localValue, setLocalValue] = useState(value);
 
-  // State
-  const [currentWindow, setCurrentWindow] = useState(() => getWindowForValue(value));
-  const [isDragging, setIsDragging] = useState(false);
-  const [pendingShift, setPendingShift] = useState<NodeJS.Timeout | null>(null);
-
-  // Refs
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isDraggingRef = useRef(false);
-  const lastChangeRef = useRef(Date.now());
-  const mountedRef = useRef(true);
 
-  // Derived
+  // Recalculate windowStart
   const windowStart = minValue + currentWindow * windowSize;
-  const windowEnd = Math.min(windowStart + windowSize, maxValue);
+  const windowEnd = windowStart + windowSize;
 
-  // Clear any pending shift timeout
-  const clearPendingShift = useCallback(() => {
-    if (pendingShift) {
-      clearTimeout(pendingShift);
-      setPendingShift(null);
+  // Update localValue if external value changes
+  useEffect(() => {
+    if (value < windowStart || value > windowEnd) {
+      const newWindow = Math.floor((value - minValue) / windowSize);
+      setCurrentWindow(newWindow);
     }
-  }, [pendingShift]);
+    setLocalValue(value);
+  }, [value, windowStart, windowEnd, minValue, windowSize]);
 
-  // Schedule window shift
-  const scheduleWindowShift = useCallback(
-    (targetWindow: number) => {
-      if (!isDraggingRef.current && targetWindow !== currentWindow) {
-        clearPendingShift();
+  const scheduleWindowShift = useCallback((newWindow: number) => {
+    if (timeoutRef.current) return;
 
-        const timeoutId = setTimeout(() => {
-          if (!isDraggingRef.current && mountedRef.current) {
-            setCurrentWindow(targetWindow);
-            setPendingShift(null);
-          }
-        }, windowShiftDelay);
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      setCurrentWindow(newWindow);
+      const newStart = minValue + newWindow * windowSize;
+      const newVal = newStart + (localValue % windowSize);
+      setLocalValue(newVal);
+      onChange(newVal);
+    }, debounceMs);
+  }, [localValue, debounceMs, minValue, onChange, windowSize]);
 
-        setPendingShift(timeoutId);
+  const handleChange = (event: { value: number }) => {
+    const newValue = event.value;
+    setLocalValue(newValue);
+    onChange(newValue);
+
+    const lowerShiftPoint = windowStart + windowSize * shiftThreshold;
+    const upperShiftPoint = windowStart + windowSize * (1 - shiftThreshold);
+
+    if (!isDraggingRef.current) {
+      if (newValue <= lowerShiftPoint && currentWindow > 0) {
+        scheduleWindowShift(currentWindow - 1);
+      } else if (newValue >= upperShiftPoint && currentWindow < maxWindow) {
+        scheduleWindowShift(currentWindow + 1);
       }
-    },
-    [currentWindow, windowShiftDelay, clearPendingShift]
-  );
-
-  // Handle slider change
-  const handleSliderChange = useCallback(
-    (event: { value: number }) => {
-      const newGlobalValue = Math.max(minValue, Math.min(maxValue, event.value));
-      lastChangeRef.current = Date.now();
-      onChange({ value: newGlobalValue });
-
-      if (!isDraggingRef.current) {
-        const lowerShiftPoint = windowStart + windowSize * (1 - shiftThreshold);
-        const upperShiftPoint = windowStart + windowSize * shiftThreshold;
-
-        if (newGlobalValue <= lowerShiftPoint && currentWindow > 0) {
-          scheduleWindowShift(currentWindow - 1);
-        } else if (newGlobalValue >= upperShiftPoint && currentWindow < maxWindow) {
-          scheduleWindowShift(currentWindow + 1);
-        }
-      }
-    },
-    [
-      minValue,
-      maxValue,
-      onChange,
-      currentWindow,
-      windowStart,
-      windowSize,
-      shiftThreshold,
-      scheduleWindowShift,
-      maxWindow,
-    ]
-  );
-
-  // Drag tracking
-  useEffect(() => {
-    const handleMouseDown = () => {
-      setIsDragging(true);
-      isDraggingRef.current = true;
-      clearPendingShift();
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      isDraggingRef.current = false;
-
-      setTimeout(() => {
-        if (mountedRef.current) {
-          const timeSinceLastChange = Date.now() - lastChangeRef.current;
-          if (timeSinceLastChange > 50) {
-            const targetWindow = getWindowForValue(value);
-            if (targetWindow !== currentWindow) {
-              scheduleWindowShift(targetWindow);
-            }
-          }
-        }
-      }, 100);
-    };
-
-    const handleMouseMove = () => {
-      if (isDraggingRef.current) {
-        lastChangeRef.current = Date.now();
-      }
-    };
-
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchstart', handleMouseDown);
-    window.addEventListener('touchend', handleMouseUp);
-
-    return () => {
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchstart', handleMouseDown);
-      window.removeEventListener('touchend', handleMouseUp);
-    };
-  }, [value, currentWindow, getWindowForValue, scheduleWindowShift, clearPendingShift]);
-
-  // Update window if value is externally changed
-  useEffect(() => {
-    const targetWindow = getWindowForValue(value);
-    if (targetWindow !== currentWindow && !isDraggingRef.current) {
-      setCurrentWindow(targetWindow);
-      clearPendingShift();
     }
-  }, [value, currentWindow, getWindowForValue, clearPendingShift]);
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-      clearPendingShift();
-    };
-  }, [clearPendingShift]);
-
-  // Display steps (can enhance this if needed)
-  const getDisplaySteps = () => rulerSteps;
+  };
 
   return (
-    <SliderContainer>
-      <WindowInfo>
-        <CurrentValue>Value: {value.toLocaleString()}</CurrentValue>
-        <WindowRange>
-          Window: {windowStart.toLocaleString()} - {windowEnd.toLocaleString()}
-          {isDragging && ' (dragging)'}
-          {pendingShift && ' (shifting...)'}
-        </WindowRange>
-      </WindowInfo>
-
+    <div
+      onMouseDown={() => { isDraggingRef.current = true; }}
+      onMouseUp={() => { isDraggingRef.current = false; }}
+      onMouseLeave={() => { isDraggingRef.current = false; }}
+    >
       <Slider
-        id={`${id}-window-${currentWindow}`}
+        id={id}
         minValue={windowStart}
-        maxValue={windowEnd}
+        maxValue={windowStart + windowSize}
+        value={localValue}
         sliderSteps={sliderSteps}
-        rulerSteps={getDisplaySteps()}
-        value={value}
-        onChange={handleSliderChange}
+        rulerSteps={rulerSteps}
+        onChange={handleChange}
       />
-    </SliderContainer>
+    </div>
   );
 };
 
