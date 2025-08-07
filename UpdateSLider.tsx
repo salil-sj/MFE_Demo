@@ -1,15 +1,44 @@
-const handleSliderChange = useCallback(
-  (event: { value: number }) => {
-    const newGlobalValue = Math.max(minValue, Math.min(maxValue, event.value));
-    lastChangeRef.current = Date.now();
-    onChange({ value: newGlobalValue });
+import React, { useMemo } from 'react';
 
-    if (!isDraggingRef.current) {
-      const newWindow = getWindowForValue(newGlobalValue);
-      if (newWindow !== currentWindow) {
-        scheduleWindowShift(newWindow);
-      }
-    }
-  },
-  [minValue, maxValue, onChange, currentWindow, getWindowForValue, scheduleWindowShift]
-);
+interface WindowedSliderWrapperProps {
+  id: string;
+  minValue: number;
+  maxValue: number;
+  windowSize: number;
+  sliderSteps: number;
+  rulerSteps: number;
+  value: number;
+  onChange: (event: { value: number }) => void;
+}
+
+const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
+  id,
+  minValue,
+  maxValue,
+  windowSize,
+  sliderSteps,
+  rulerSteps,
+  value,
+  onChange,
+}) => {
+  const currentWindow = useMemo(() => {
+    return Math.floor((value - minValue) / windowSize);
+  }, [value, minValue, windowSize]);
+
+  const windowStart = minValue + currentWindow * windowSize;
+  const windowEnd = Math.min(windowStart + windowSize, maxValue);
+
+  return (
+    <Slider
+      id={`${id}-window-${currentWindow}`}
+      minValue={windowStart}
+      maxValue={windowEnd}
+      sliderSteps={sliderSteps}
+      rulerSteps={rulerSteps}
+      value={value}
+      onChange={onChange}
+    />
+  );
+};
+
+export default WindowedSliderWrapper;
