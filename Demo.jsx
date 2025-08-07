@@ -1,94 +1,65 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import Slider from './Slider'; // Your internal, unchangeable Slider component
-
-interface DynamicSliderWrapperProps {
-  id?: string;
-  minValue: number;        // Full range min
-  maxValue: number;        // Full range max
+// Props for the wrapper
+interface WindowedSliderWrapperProps {
+  id: string;
+  fullMin: number;
+  fullMax: number;
+  windowSize?: number;
+  buffer?: number;
   sliderSteps: number;
   rulerSteps: number;
-  value: number;           // Current slider value
+  value: number;
   onChange: (value: number) => void;
-
-  // Optional props to control dynamic behavior
-  windowSize?: number;     // Visible slider window size (default: 20000)
-  buffer?: number;         // Buffer near edges to trigger shift (default: 5000)
 }
 
-const DynamicSliderWrapper: React.FC<DynamicSliderWrapperProps> = ({
+const SliderContainer = styled.div`
+  width: 100%;
+  padding: 16px;
+  transition: all 0.3s ease;
+`;
+
+export const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   id,
-  minValue,
-  maxValue,
+  fullMin,
+  fullMax,
+  windowSize = 20000,
+  buffer = 5000,
   sliderSteps,
   rulerSteps,
   value,
   onChange,
-  windowSize = 20000,
-  buffer = 5000,
 }) => {
-  const [windowMin, setWindowMin] = useState(minValue);
-  const [windowMax, setWindowMax] = useState(minValue + windowSize);
+  const [windowStart, setWindowStart] = useState(() => {
+    const initialStart = Math.max(fullMin, value - windowSize / 2);
+    return Math.min(initialStart, fullMax - windowSize);
+  });
 
-  // Dynamically shift the visible slider window when needed
+  const windowEnd = windowStart + windowSize;
+
+  // When value is near start or end, shift the window
   useEffect(() => {
-    if (value >= windowMax - buffer && windowMax < maxValue) {
-      const newWindowMin = Math.min(value - buffer, maxValue - windowSize);
-      const newWindowMax = newWindowMin + windowSize;
-      setWindowMin(newWindowMin);
-      setWindowMax(newWindowMax);
-    } else if (value <= windowMin + buffer && windowMin > minValue) {
-      const newWindowMin = Math.max(value - windowSize + buffer, minValue);
-      const newWindowMax = newWindowMin + windowSize;
-      setWindowMin(newWindowMin);
-      setWindowMax(newWindowMax);
+    if (value < windowStart + buffer && windowStart > fullMin) {
+      const newStart = Math.max(fullMin, value - windowSize / 2);
+      setWindowStart(newStart);
+    } else if (value > windowEnd - buffer && windowEnd < fullMax) {
+      const newStart = Math.min(fullMax - windowSize, value - windowSize / 2);
+      setWindowStart(newStart);
     }
-  }, [value, windowMin, windowMax, minValue, maxValue, windowSize, buffer]);
+  }, [value, windowStart, windowEnd, fullMin, fullMax, buffer, windowSize]);
 
-  // Handle slider value change from internal component
-  const handleSliderChange = useCallback(
-    (event: any) => {
-      const newValue = event?.value;
-      onChange(newValue);
-    },
-    [onChange]
-  );
+  // Clamp the visible value within the current window
+  const visibleValue = Math.min(Math.max(value, windowStart), windowEnd);
 
   return (
-    <Slider
-      id={id}
-      minValue={windowMin}
-      maxValue={windowMax}
-      sliderSteps={sliderSteps}
-      rulerSteps={rulerSteps}
-      value={value}
-      onChange={handleSliderChange}
-    />
-  );
-};
-
-export default DynamicSliderWrapper;
-
-import React, { useState } from 'react';
-import DynamicSliderWrapper from './DynamicSliderWrapper';
-
-const App: React.FC = () => {
-  const [value, setValue] = useState(0);
-
-  return (
-    <div>
-      <h2>Dynamic Range Slider</h2>
-      <DynamicSliderWrapper
-        id="salary-slider"
-        minValue={0}
-        maxValue={100000}
-        sliderSteps={100}
-        rulerSteps={5000}
-        value={value}
-        onChange={setValue}
+    <SliderContainer>
+      <Slider
+        id={id}
+        minValue={Math.round(windowStart)}
+        maxValue={Math.round(windowEnd)}
+        sliderSteps={sliderSteps}
+        rulerSteps={rulerSteps}
+        value={Math.round(visibleValue)}
+        onChange={(event) => onChange(event.value)}
       />
-      <p>Selected Value: {value}</p>
-    </div>
+    </SliderContainer>
   );
 };
-
-export default App;
