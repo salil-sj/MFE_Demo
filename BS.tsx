@@ -14,7 +14,8 @@ interface WindowedSliderWrapperProps {
   isLogo?: boolean;
   logoSrc?: string;
   label?: string;
-  inputLabel?: string;
+  inputLabel?: string; // e.g. "USD"
+  showInfoIcon?: boolean;
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -39,27 +40,64 @@ const LeftSection = styled.div`
 `;
 
 const Logo = styled.img`
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 `;
 
 const Label = styled.span`
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
 `;
 
 const InputContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 `;
 
-const InputLabel = styled.span``;
+const InfoIcon = styled.div`
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+`;
+
+const InputWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  overflow: hidden;
+`;
+
+const InputLabel = styled.span`
+  background-color: #f8f8f8;
+  padding: 4px 6px;
+  font-size: 13px;
+  color: #555;
+  border-right: 1px solid #ccc;
+`;
 
 const ValueInput = styled.input`
   width: 80px;
   padding: 4px;
   text-align: right;
+  border: none;
+  font-size: 13px;
+
+  &:focus {
+    outline: none;
+  }
 `;
 
 const SliderWrapper = styled.div`
@@ -80,12 +118,12 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   logoSrc,
   label,
   inputLabel,
+  showInfoIcon = false,
 }) => {
   const effectiveStep = Math.max(1, Math.floor(stepSize ?? Math.floor(windowSize / 2)));
   const [windowStart, setWindowStart] = useState<number>(minValue);
   const prevValueRef = useRef<number>(value);
 
-  // Preserve your original perfect logic
   useEffect(() => {
     const prev = prevValueRef.current;
     if (value === prev) return;
@@ -128,8 +166,11 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
           {label && <Label>{label}</Label>}
         </LeftSection>
         <InputContainer>
-          {inputLabel && <InputLabel>{inputLabel}</InputLabel>}
-          <ValueInput type="number" value={value} onChange={handleInputChange} />
+          {showInfoIcon && <InfoIcon>i</InfoIcon>}
+          <InputWrapper>
+            {inputLabel && <InputLabel>{inputLabel}</InputLabel>}
+            <ValueInput type="number" value={value} onChange={handleInputChange} />
+          </InputWrapper>
         </InputContainer>
       </TopRow>
 
