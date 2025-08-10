@@ -52,12 +52,13 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   const isProgressiveDrag = (newValue: number) => {
     const now = Date.now();
     const timeDiff = now - lastChangeTimeRef.current;
+    const prevValue = prevValueRef.current;
     
-    // Add to sequence if changes are happening quickly (< 100ms apart)
-    if (timeDiff < 100) {
+    // Add to sequence if changes are happening quickly (< 150ms apart)
+    if (timeDiff < 150) {
       changeSequenceRef.current.push(newValue);
-      // Keep only last 5 changes
-      if (changeSequenceRef.current.length > 5) {
+      // Keep only last 4 changes for better detection
+      if (changeSequenceRef.current.length > 4) {
         changeSequenceRef.current.shift();
       }
     } else {
@@ -67,17 +68,33 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
     
     lastChangeTimeRef.current = now;
     
-    // If we have multiple rapid changes in the same direction, it's likely a drag
-    if (changeSequenceRef.current.length >= 3) {
-      const sequence = changeSequenceRef.current;
-      const isDecreasing = sequence.every((val, i) => 
-        i === 0 || val <= sequence[i - 1]
-      );
-      const isIncreasing = sequence.every((val, i) => 
-        i === 0 || val >= sequence[i - 1]
-      );
+    // Check for drag patterns
+    const sequence = changeSequenceRef.current;
+    
+    // For backward: if we have repeated attempts at boundary or decreasing trend
+    if (sequence.length >= 2) {
+      const currentWindowStart = minValue + currentWindow * windowSize;
       
-      return { isDrag: true, direction: isDecreasing ? 'backward' : isIncreasing ? 'forward' : 'none' };
+      // Backward detection: hitting boundary repeatedly or clear decreasing pattern
+      const hitBoundaryCount = sequence.filter(val => val <= currentWindowStart).length;
+      const hasDecreasingTrend = sequence.slice(-3).every((val, i, arr) => 
+        i === 0 || val <= arr[i - 1]
+      );
+      const overallDecrease = newValue < prevValue;
+      
+      if (hitBoundaryCount >= 2 || (hasDecreasingTrend && overallDecrease)) {
+        return { isDrag: true, direction: 'backward' };
+      }
+      
+      // Forward detection: clear increasing pattern
+      const hasIncreasingTrend = sequence.slice(-3).every((val, i, arr) => 
+        i === 0 || val >= arr[i - 1]
+      );
+      const overallIncrease = newValue > prevValue;
+      
+      if (hasIncreasingTrend && overallIncrease && sequence.length >= 3) {
+        return { isDrag: true, direction: 'forward' };
+      }
     }
     
     return { isDrag: false, direction: 'none' };
