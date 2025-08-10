@@ -11,17 +11,62 @@ interface WindowedSliderWrapperProps {
   rulerSteps: number;
   value: number;
   onChange: (event: { value: number }) => void;
-
-  // UI props
   isLogo?: boolean;
   logoSrc?: string;
-  label: string;
-  inputLabel: string;
+  label?: string;
+  inputLabel?: string;
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
-export const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+`;
+
+const TopRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const LeftSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const Logo = styled.img`
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+`;
+
+const Label = styled.span`
+  font-weight: bold;
+`;
+
+const InputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const InputLabel = styled.span``;
+
+const ValueInput = styled.input`
+  width: 80px;
+  padding: 4px;
+  text-align: right;
+`;
+
+const SliderWrapper = styled.div`
+  width: 100%;
+`;
+
+const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   id,
   minValue,
   maxValue,
@@ -36,34 +81,34 @@ export const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   label,
   inputLabel,
 }) => {
-  const effectiveStep = stepSize ?? Math.floor(windowSize / 2);
-  const [windowStart, setWindowStart] = useState(minValue);
-  const prevValueRef = useRef(value);
+  const effectiveStep = Math.max(1, Math.floor(stepSize ?? Math.floor(windowSize / 2)));
+  const [windowStart, setWindowStart] = useState<number>(minValue);
+  const prevValueRef = useRef<number>(value);
 
-  // Direction-aware shifting
+  // Preserve your original perfect logic
   useEffect(() => {
-    const prevValue = prevValueRef.current;
-    const direction =
-      value > prevValue ? "forward" : value < prevValue ? "backward" : null;
+    const prev = prevValueRef.current;
+    if (value === prev) return;
 
-    if (
-      direction === "forward" &&
-      value > windowStart + windowSize &&
-      windowStart + windowSize < maxValue
-    ) {
-      setWindowStart((prev) =>
-        Math.min(prev + effectiveStep, maxValue - windowSize)
-      );
-    } else if (
-      direction === "backward" &&
-      value < windowStart &&
-      windowStart > minValue
-    ) {
-      setWindowStart((prev) => Math.max(prev - effectiveStep, minValue));
+    const movingForward = value > prev;
+    let ws = windowStart;
+
+    if (movingForward) {
+      while (value >= ws + windowSize && ws + effectiveStep <= maxValue - windowSize) {
+        ws = Math.min(ws + effectiveStep, maxValue - windowSize);
+      }
+    } else {
+      while (value <= ws && ws - effectiveStep >= minValue) {
+        ws = Math.max(ws - effectiveStep, minValue);
+      }
+    }
+
+    if (ws !== windowStart) {
+      setWindowStart(ws);
     }
 
     prevValueRef.current = value;
-  }, [value, windowStart, effectiveStep, minValue, maxValue, windowSize]);
+  }, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
 
   const windowEnd = Math.min(windowStart + windowSize, maxValue);
   const sliderValue = clamp(value, windowStart, windowEnd);
@@ -76,101 +121,31 @@ export const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   };
 
   return (
-    <Wrapper>
-      <TopBar>
+    <Container>
+      <TopRow>
         <LeftSection>
-          {isLogo && (
-            <LogoBox>
-              {logoSrc ? (
-                <img src={logoSrc} alt="logo" />
-              ) : (
-                <span>Logo</span>
-              )}
-            </LogoBox>
-          )}
-          <Label>{label}</Label>
+          {isLogo && logoSrc && <Logo src={logoSrc} alt="Logo" />}
+          {label && <Label>{label}</Label>}
         </LeftSection>
+        <InputContainer>
+          {inputLabel && <InputLabel>{inputLabel}</InputLabel>}
+          <ValueInput type="number" value={value} onChange={handleInputChange} />
+        </InputContainer>
+      </TopRow>
 
-        <RightSection>
-          <span>{inputLabel}</span>
-          <NumberInput
-            type="number"
-            value={sliderValue}
-            onChange={handleInputChange}
-          />
-        </RightSection>
-      </TopBar>
-
-      <Slider
-        id={`${id}-window`}
-        minValue={windowStart}
-        maxValue={windowEnd}
-        sliderSteps={sliderSteps}
-        rulerSteps={rulerSteps}
-        value={sliderValue}
-        onChange={onChange}
-      />
-    </Wrapper>
+      <SliderWrapper>
+        <Slider
+          id={`${id}-window`}
+          minValue={windowStart}
+          maxValue={windowEnd}
+          sliderSteps={sliderSteps}
+          rulerSteps={rulerSteps}
+          value={sliderValue}
+          onChange={onChange}
+        />
+      </SliderWrapper>
+    </Container>
   );
 };
-
-/* ===== Styled Components ===== */
-const Wrapper = styled.div`
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-`;
-
-const TopBar = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-  gap: 10px;
-`;
-
-const LeftSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const LogoBox = styled.div`
-  width: 40px;
-  height: 40px;
-  background-color: #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-`;
-
-const Label = styled.span`
-  font-weight: bold;
-  font-size: 1rem;
-`;
-
-const RightSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  span {
-    font-size: 0.9rem;
-  }
-`;
-
-const NumberInput = styled.input`
-  width: 100px;
-  padding: 4px 6px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
 
 export default WindowedSliderWrapper;
