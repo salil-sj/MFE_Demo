@@ -5,10 +5,10 @@ interface WindowedSliderWrapperProps {
   minValue: number;
   maxValue: number;
   windowSize: number;
-  stepSize?: number;
+  stepSize?: number;        // default = windowSize / 2
   sliderSteps: number;
   rulerSteps: number;
-  value: number;
+  value: number;            // global absolute value
   onChange: (event: { value: number }) => void;
 }
 
@@ -25,26 +25,37 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   value,
   onChange,
 }) => {
-  const effectiveStep = stepSize ?? Math.floor(windowSize / 2);
-
-  const [windowStart, setWindowStart] = useState(minValue);
-  const prevValueRef = useRef(value);
+  const effectiveStep = Math.max(1, Math.floor(stepSize ?? Math.floor(windowSize / 2)));
+  const [windowStart, setWindowStart] = useState<number>(minValue);
+  const prevValueRef = useRef<number>(value);
 
   useEffect(() => {
-    const prevValue = prevValueRef.current;
-    const direction = value > prevValue ? "forward" : value < prevValue ? "backward" : null;
+    const prev = prevValueRef.current;
+    // update prev even when equal to keep ref fresh
+    if (value === prev) return;
 
-    // Forward shift: when going beyond window end
-    if (direction === "forward" && value >= windowStart + windowSize && windowStart + windowSize < maxValue) {
-      setWindowStart(prev => Math.min(prev + effectiveStep, maxValue - windowSize));
+    // Moving forward or backward?
+    const movingForward = value > prev;
+    let ws = windowStart;
+
+    if (movingForward) {
+      // Move forward while value is at/over the current window end
+      while (value >= ws + windowSize && ws + effectiveStep <= maxValue - windowSize) {
+        ws = Math.min(ws + effectiveStep, maxValue - windowSize);
+      }
+    } else {
+      // Move backward while value is at/below the current window start
+      while (value <= ws && ws - effectiveStep >= minValue) {
+        ws = Math.max(ws - effectiveStep, minValue);
+      }
     }
-    // Backward shift: when going below window start
-    else if (direction === "backward" && value <= windowStart && windowStart > minValue) {
-      setWindowStart(prev => Math.max(prev - effectiveStep, minValue));
+
+    if (ws !== windowStart) {
+      setWindowStart(ws);
     }
 
     prevValueRef.current = value;
-  }, [value, windowSize, effectiveStep, minValue, maxValue, windowStart]);
+  }, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
 
   const windowEnd = Math.min(windowStart + windowSize, maxValue);
   const sliderValue = clamp(value, windowStart, windowEnd);
