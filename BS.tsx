@@ -1,15 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 
 interface WindowedSliderWrapperProps {
   id: string;
-  minValue: number;         // Global min
-  maxValue: number;         // Global max
-  windowSize: number;       // e.g., 20000
-  stepSize?: number;        // e.g., 10000 for overlapping windows
+  minValue: number;
+  maxValue: number;
+  windowSize: number;
+  stepSize?: number;        // how much the window moves each shift (default = windowSize/2)
   sliderSteps: number;
   rulerSteps: number;
-  value: number;            // Current full-range value
+  value: number;            // global value
   onChange: (event: { value: number }) => void;
+}
+
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+
+function computeWindowStart(
+  value: number,
+  minValue: number,
+  maxValue: number,
+  windowSize: number,
+  stepSize: number
+) {
+  const totalRange = maxValue - minValue;
+  if (windowSize >= totalRange) return minValue; // whole range fits in one window
+
+  const half = windowSize / 2;
+  // center-based deterministic formula:
+  const rel = value - minValue - half;
+  const n = Math.floor(rel / stepSize); // can be negative, floor works
+  let ws = minValue + n * stepSize;
+  // clamp so window doesn't go beyond bounds
+  ws = clamp(ws, minValue, maxValue - windowSize);
+  return ws;
 }
 
 const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
@@ -17,27 +39,34 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   minValue,
   maxValue,
   windowSize,
-  stepSize = windowSize, // default to full jump if not given
+  stepSize,
   sliderSteps,
   rulerSteps,
   value,
   onChange,
 }) => {
-  const [windowStart, setWindowStart] = useState(minValue);
-  
-  // Adjust window when slider hits boundaries
+  const effectiveStep = Math.max(1, Math.floor(stepSize ?? Math.floor(windowSize / 2)));
+  const [windowStart, setWindowStart] = useState<number>(() =>
+    computeWindowStart(value, minValue, maxValue, windowSize, effectiveStep)
+  );
+
+  // Recompute deterministically whenever the global value (or config) changes.
   useEffect(() => {
-    if (value >= windowStart + windowSize && windowStart + windowSize < maxValue) {
-      // Moved past upper bound → shift forward by stepSize
-      setWindowStart(prev => Math.min(prev + stepSize, maxValue - windowSize));
-    } 
-    else if (value <= windowStart && windowStart > minValue) {
-      // Moved past lower bound → shift backward by stepSize
-      setWindowStart(prev => Math.max(prev - stepSize, minValue));
+    const ws = computeWindowStart(value, minValue, maxValue, windowSize, effectiveStep);
+    if (ws !== windowStart) {
+      setWindowStart(ws);
     }
-  }, [value, windowSize, stepSize, minValue, maxValue, windowStart]);
+  }, [value, minValue, maxValue, windowSize, effectiveStep, windowStart]);
 
   const windowEnd = Math.min(windowStart + windowSize, maxValue);
+  // Ensure the value passed into the internal slider is within the current window.
+  const sliderValue = clamp(value, windowStart, windowEnd);
+
+  // Forward the slider onChange as-is (the slider will emit absolute/global values
+  // because we set its minValue/maxValue to windowStart/windowEnd).
+  const handleChange = (event: { value: number }) => {
+    onChange(event);
+  };
 
   return (
     <Slider
@@ -46,8 +75,8 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
       maxValue={windowEnd}
       sliderSteps={sliderSteps}
       rulerSteps={rulerSteps}
-      value={value}
-      onChange={onChange}
+      value={sliderValue}
+      onChange={handleChange}
     />
   );
 };
