@@ -18,45 +18,41 @@ interface WindowedSliderWrapperProps {
   showInfoIcon?: boolean;
 }
 
+// clamp function unchanged
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
+// styled-components unchanged
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
 `;
-
 const TopRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
 `;
-
 const LeftSection = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
 `;
-
 const Logo = styled.img`
   width: 20px;
   height: 20px;
   object-fit: contain;
 `;
-
 const Label = styled.span`
   font-weight: 600;
   font-size: 14px;
   color: #333;
 `;
-
 const InputContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
 `;
-
 const InfoIcon = styled.div`
   width: 18px;
   height: 18px;
@@ -71,7 +67,6 @@ const InfoIcon = styled.div`
   cursor: pointer;
   user-select: none;
 `;
-
 const InputWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -79,7 +74,6 @@ const InputWrapper = styled.div`
   border-radius: 2px;
   overflow: hidden;
 `;
-
 const InputLabel = styled.span`
   background-color: #f8f8f8;
   padding: 4px 6px;
@@ -87,7 +81,6 @@ const InputLabel = styled.span`
   color: #555;
   border-right: 1px solid #ccc;
 `;
-
 const ValueInput = styled.input`
   width: 80px;
   padding: 4px;
@@ -99,10 +92,12 @@ const ValueInput = styled.input`
     outline: none;
   }
 `;
-
 const SliderWrapper = styled.div`
   width: 100%;
 `;
+
+// Assume Slider component is imported here
+// import Slider from "external-slider-lib";
 
 const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   id,
@@ -123,8 +118,11 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
   const effectiveStep = Math.max(1, Math.floor(stepSize ?? Math.floor(windowSize / 2)));
   const [windowStart, setWindowStart] = useState<number>(minValue);
   const prevValueRef = useRef<number>(value);
-  const windowUpdateTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // NEW: Track dragging state internally
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Update windowStart when value changes, as before
   useEffect(() => {
     const prev = prevValueRef.current;
     if (value === prev) return;
@@ -143,38 +141,53 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
     }
 
     if (ws !== windowStart) {
-      // Clear any previous timeout
-      if (windowUpdateTimeoutRef.current) {
-        clearTimeout(windowUpdateTimeoutRef.current);
-      }
-      
-      // Add delay for window changes to handle iframe mouse event issues
-      windowUpdateTimeoutRef.current = setTimeout(() => {
-        setWindowStart(ws);
-      }, 300);
+      setWindowStart(ws);
     }
 
     prevValueRef.current = value;
   }, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (windowUpdateTimeoutRef.current) {
-        clearTimeout(windowUpdateTimeoutRef.current);
-      }
-    };
-  }, []);
-
   const windowEnd = Math.min(windowStart + windowSize, maxValue);
   const sliderValue = clamp(value, windowStart, windowEnd);
 
+  // Handle input changes normally
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVal = Number(e.target.value);
     if (!isNaN(newVal)) {
       onChange({ value: clamp(newVal, minValue, maxValue) });
     }
   };
+
+  // NEW: Mouse event handlers to track dragging start and end
+  const handleMouseDown = () => {
+    setIsDragging(true);
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      // Optionally commit final value if needed here
+      onChange({ value });
+    }
+  };
+
+  // NEW: Listen for mouseup on window AND window.parent (outside iframe)
+  useEffect(() => {
+    // On mouseup inside iframe window
+    window.addEventListener("mouseup", handleMouseUp);
+
+    // On mouseup outside iframe (on parent window)
+    if (window.parent && window.parent !== window) {
+      window.parent.addEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener("mouseup", handleMouseUp);
+      if (window.parent && window.parent !== window) {
+        window.parent.removeEventListener("mouseup", handleMouseUp);
+      }
+    };
+  }, [isDragging, value]);
 
   return (
     <Container>
@@ -200,7 +213,16 @@ const WindowedSliderWrapper: React.FC<WindowedSliderWrapperProps> = ({
           sliderSteps={sliderSteps}
           rulerSteps={rulerSteps}
           value={sliderValue}
-          onChange={onChange}
+          onChange={(event) => {
+            if (!isDragging) {
+              // If not dragging, just update
+              onChange(event);
+            } else {
+              // When dragging, still update value continuously
+              onChange(event);
+            }
+          }}
+          onMouseDown={handleMouseDown} // Capture mouse down on slider to start dragging
         />
       </SliderWrapper>
     </Container>
