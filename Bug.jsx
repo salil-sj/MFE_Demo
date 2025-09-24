@@ -1,27 +1,20 @@
-useEffect(() => {
-    const prev = prevValueRef.current;
-    if (value === prev) return;
+  useEffect(() => {
+    let ws: number;
 
-    let ws = windowStart;
-
-    // ✅ Calculate where the value *should* be
-    if (value < windowStart) {
-      // Slide window backwards
-      ws = Math.max(value - (value % effectiveStep), minValue);
-    } else if (value >= windowStart + windowSize) {
-      // Slide window forwards
-      ws = Math.min(
-        value - (value % effectiveStep),
-        maxValue - windowSize + 1
-      );
-    }
-
-    // ✅ Clamp at edges
-    if (value >= maxValue - windowSize + 1) {
-      ws = Math.max(maxValue - windowSize + 1, minValue);
-    }
+    // 🟢 Compute windowStart directly from value
     if (value <= minValue) {
       ws = minValue;
+    } else if (value >= maxValue - windowSize + 1) {
+      ws = Math.max(maxValue - windowSize + 1, minValue);
+    } else {
+      ws =
+        Math.floor((value - minValue) / effectiveStep) * effectiveStep +
+        minValue;
+
+      // Clamp so window doesn’t exceed maxValue
+      if (ws + windowSize - 1 > maxValue) {
+        ws = maxValue - windowSize + 1;
+      }
     }
 
     if (ws !== windowStart) {
@@ -31,3 +24,5 @@ useEffect(() => {
 
     prevValueRef.current = value;
   }, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
+
+  const windowEnd = Math.min(windowStart + windowSize - 1, maxValue);
