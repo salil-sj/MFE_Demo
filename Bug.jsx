@@ -1,9 +1,10 @@
-useEffect(() => {
+  useEffect(() => {
     const prev = prevValueRef.current;
     if (value === prev) return;
 
     const movingForward = value > prev;
     let ws = windowStart;
+    let windowMoved = false;
 
     if (movingForward) {
       // Move window forward when value exceeds current window bounds
@@ -11,24 +12,44 @@ useEffect(() => {
         const nextWindowStart = ws + effectiveStep;
         // Ensure we don't go beyond the point where we can show a meaningful window
         if (nextWindowStart > maxValue - windowSize) {
-          ws = maxValue - windowSize;
+          const newWs = maxValue - windowSize;
+          if (newWs !== ws) {
+            ws = newWs;
+            windowMoved = true;
+          }
           break;
         } else {
           ws = nextWindowStart;
+          windowMoved = true;
         }
-        setSliderKey((prev) => prev + 1);
       }
     } else {
-      // Move window backward when value is below current window start
-      while (value < ws && ws > minValue) {
-        ws = Math.max(ws - effectiveStep, minValue);
-        setSliderKey((prev) => prev + 1);
+      // Move window backward when value is below current window bounds
+      while (value < ws) {
+        const nextWindowStart = ws - effectiveStep;
+        // Ensure we don't go below minValue
+        if (nextWindowStart < minValue) {
+          const newWs = minValue;
+          if (newWs !== ws) {
+            ws = newWs;
+            windowMoved = true;
+          }
+          break;
+        } else {
+          ws = nextWindowStart;
+          windowMoved = true;
+        }
       }
     }
 
     if (ws !== windowStart) {
       setWindowStart(ws);
     }
+    
+    if (windowMoved) {
+      setSliderKey((prev) => prev + 1);
+    }
+    
     prevValueRef.current = value;
   }, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
 
