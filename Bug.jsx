@@ -24,8 +24,9 @@
         }
       }
     } else {
-      // Move window backward when value is below current window bounds
-      while (value < ws) {
+      // Move window backward when value is at or below the overlap threshold
+      // We want to move back when we're in the overlapping region and moving backward
+      while (value <= ws + Math.floor(effectiveStep / 2)) {
         const nextWindowStart = ws - effectiveStep;
         // Ensure we don't go below minValue
         if (nextWindowStart < minValue) {
