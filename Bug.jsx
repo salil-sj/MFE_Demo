@@ -1,35 +1,33 @@
 useEffect(() => {
-  const prev = prevValueRef.current;
-  if (value === prev) return;
+    const prev = prevValueRef.current;
+    if (value === prev) return;
 
-  const movingForward = value > prev;
-  let ws = windowStart;
+    let ws = windowStart;
 
-  if (movingForward) {
-    // Move window forward
-    while (value >= ws + windowSize && ws < maxValue - windowSize + 1) {
-      ws = Math.min(ws + effectiveStep, maxValue - windowSize + 1);
-      setSliderKey((prev) => prev + 1);
+    // ✅ Calculate where the value *should* be
+    if (value < windowStart) {
+      // Slide window backwards
+      ws = Math.max(value - (value % effectiveStep), minValue);
+    } else if (value >= windowStart + windowSize) {
+      // Slide window forwards
+      ws = Math.min(
+        value - (value % effectiveStep),
+        maxValue - windowSize + 1
+      );
     }
-  } else {
-    // Move window backward
-    while (value < ws && ws > minValue) {
-      ws = Math.max(ws - effectiveStep, minValue);
-      setSliderKey((prev) => prev + 1);
+
+    // ✅ Clamp at edges
+    if (value >= maxValue - windowSize + 1) {
+      ws = Math.max(maxValue - windowSize + 1, minValue);
     }
-  }
+    if (value <= minValue) {
+      ws = minValue;
+    }
 
-  // ✅ Clamp at the edges
-  if (value >= maxValue - windowSize + 1) {
-    ws = Math.max(maxValue - windowSize + 1, minValue);
-  }
-  if (value <= minValue) {
-    ws = minValue;
-  }
+    if (ws !== windowStart) {
+      setWindowStart(ws);
+      setSliderKey((prev) => prev + 1); // force re-render
+    }
 
-  if (ws !== windowStart) {
-    setWindowStart(ws);
-  }
-
-  prevValueRef.current = value;
-}, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
+    prevValueRef.current = value;
+  }, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
