@@ -1,57 +1,33 @@
-  useEffect(() => {
-    const prev = prevValueRef.current;
-    if (value === prev) return;
+useEffect(() => {
+  const prev = prevValueRef.current;
+  if (value === prev) return;
 
-    const movingForward = value > prev;
-    let ws = windowStart;
-    let windowMoved = false;
+  const movingForward = value > prev;
+  let ws = windowStart;
 
-    if (movingForward) {
-      // Move window forward when value exceeds current window bounds
-      while (value > ws + windowSize - 1) {
-        const nextWindowStart = ws + effectiveStep;
-        // Ensure we don't go beyond the point where we can show a meaningful window
-        if (nextWindowStart > maxValue - windowSize) {
-          const newWs = maxValue - windowSize;
-          if (newWs !== ws) {
-            ws = newWs;
-            windowMoved = true;
-          }
-          break;
-        } else {
-          ws = nextWindowStart;
-          windowMoved = true;
-        }
-      }
-    } else {
-      // Move window backward when value is at or below the overlap threshold
-      // We want to move back when we're in the overlapping region and moving backward
-      while (value <= ws + Math.floor(effectiveStep / 2)) {
-        const nextWindowStart = ws - effectiveStep;
-        // Ensure we don't go below minValue
-        if (nextWindowStart < minValue) {
-          const newWs = minValue;
-          if (newWs !== ws) {
-            ws = newWs;
-            windowMoved = true;
-          }
-          break;
-        } else {
-          ws = nextWindowStart;
-          windowMoved = true;
-        }
-      }
-    }
-
-    if (ws !== windowStart) {
-      setWindowStart(ws);
-    }
-    
-    if (windowMoved) {
+  if (movingForward) {
+    while (value >= ws + windowSize && ws + effectiveStep <= maxValue) {
+      ws = Math.min(ws + effectiveStep, maxValue - windowSize + 1);
       setSliderKey((prev) => prev + 1);
     }
-    
-    prevValueRef.current = value;
-  }, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
+  } else {
+    while (value < ws && ws - effectiveStep >= minValue) {
+      ws = Math.max(ws - effectiveStep, minValue);
+      setSliderKey((prev) => prev + 1);
+    }
+  }
 
-  const windowEnd = Math.min(windowStart + windowSize, maxValue);
+  // ✅ Clamp near the edges
+  if (value > maxValue - windowSize + 1) {
+    ws = Math.max(maxValue - windowSize + 1, minValue);
+  }
+  if (value < minValue + effectiveStep) {
+    ws = minValue;
+  }
+
+  if (ws !== windowStart) {
+    setWindowStart(ws);
+  }
+
+  prevValueRef.current = value;
+}, [value, windowStart, windowSize, effectiveStep, minValue, maxValue]);
